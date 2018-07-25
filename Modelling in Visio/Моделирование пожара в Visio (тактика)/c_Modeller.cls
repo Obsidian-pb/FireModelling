@@ -1,0 +1,239 @@
+VERSION 1.0 CLASS
+BEGIN
+  MultiUse = -1  'True
+END
+Attribute VB_Name = "c_Modeller"
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = False
+Attribute VB_PredeclaredId = False
+Attribute VB_Exposed = False
+Option Explicit
+
+'------------------------------------Класс моделирующий поведение пожара----------------------------------------------
+Const diag As Double = 0.1                                  ' Коэффициент мощности по диагонали
+Const orto As Double = 0.14142135623731                     ' Коэффициент мощности по вертикали и горизонтали
+Const mmInInch As Double = 25.4
+
+Private matrix As c_Matrix
+
+Public grain As Double
+
+
+Public Sub SetMatrix(ByRef m As c_Matrix)
+'Устанавливаем ссылку на матрицу
+    Set matrix = m
+End Sub
+
+Public Sub SetFireCell(ByVal x As Long, ByVal y As Long, Optional value As Double)
+'Создаем новую точку горения
+    matrix.SetFireCell x, y, value
+End Sub
+
+
+
+
+
+
+
+Public Sub OneRound()
+'один шаг моделирования
+Dim cell As c_Cell
+
+    'Очищаем коллекцию клеток только начинающих гореть (разгорающихся)
+    Set matrix.startedFireCells = New Collection
+    
+    'Очищаем коллекцию ключевых точек
+    Set matrix.keyCornerCells = New Collection
+
+    'Атакуем всем горящими клетками (неоптимально, поэтому закоменчено, оставлено для сравнения)
+'    For Each cell In matrix.firedCells
+'        Attack cell.x, cell.y
+'    Next cell
+    'Атакуем всем активными клетками (не внутренними)
+    For Each cell In matrix.activeFiredCells
+        Attack cell.x, cell.y
+    Next cell
+    
+    '--------------------
+    'После атаки увеличиваем значения горения всех клеток в соответствии с полученным ими энергиями
+    For Each cell In matrix.chargedCells
+        RizeCellFire cell.x, cell.y
+    Next cell
+    
+    'Очищаем коллекцию клеток получивших заряд
+    Set matrix.chargedCells = New Collection
+    
+    'Проверяем клетки, на предмет того, не стали ли они внтуренними, и в этом случае удаляем их из коллекций
+    For Each cell In matrix.activeFiredCells
+        If matrix.IsInner(cell.x, cell.y) Then
+            RemoveFromActiveCells cell.x, cell.y
+            RemoveFromFrontCells cell.x, cell.y
+        End If
+    Next cell
+
+    
+    '--------------------
+    'Спрямляем горение у стен (проверяем все клетки, что получили энергию, но еще не горят полностью))
+    Dim shp As Visio.Shape
+    For Each cell In matrix.fireFrontCells
+        If matrix.IsTripleStateCell(cell.x, cell.y) Then
+            matrix.keyCornerCells.Add cell
+        '!!!Отрисовываем квадрат если клетка является ключевой
+
+            Set shp = Application.ActivePage.DrawRectangle(cell.x * grain / mmInInch, cell.y * grain / mmInInch, _
+                    (cell.x + 1) * grain / mmInInch, (cell.y + 1) * grain / mmInInch)
+            shp.CellsSRC(visSectionObject, visRowLayerMem, visLayerMember).FormulaForceU = GetLayerNumber("Угловые точки")
+            shp.Cells("LinePattern").FormulaU = "0"
+            shp.Cells("FillForegnd").FormulaU = "3"
+        End If
+    Next cell
+
+
+    
+End Sub
+
+
+Private Sub Attack(ByVal x As Long, ByVal y As Long)
+'Атакуем указанной клеткой все соседние в соовтествии с мощностью горения и весами распространения
+Dim firePower As Double
+'GetFirePower
+
+    '1 получаем мощность горения клетки
+    firePower = matrix.GetFirePower(x, y)
+    
+    '2 проверяем распространяет ли клетка горение и является ли она внешнеий (позже)
+    If firePower = 0 Or matrix.IsInner(x, y) Then
+        Exit Sub
+    End If
+    
+    '3 Атакуем соседние клетки
+    'по диагонали
+        RizeGettedCellPower x - 1, y - 1, firePower * diag
+        RizeGettedCellPower x - 1, y + 1, firePower * diag
+        RizeGettedCellPower x + 1, y - 1, firePower * diag
+        RizeGettedCellPower x + 1, y + 1, firePower * diag
+    'по ортогонали
+        RizeGettedCellPower x - 1, y, firePower * orto
+        RizeGettedCellPower x + 1, y, firePower * orto
+        RizeGettedCellPower x, y - 1, firePower * orto
+        RizeGettedCellPower x, y + 1, firePower * orto
+    
+End Sub
+
+Private Sub RizeGettedCellPower(ByVal x As Long, ByVal y As Long, ByVal value As Double)
+'Увеличиваем полученное значение горения
+    
+    'Проверяем, не выходит ли координата ячейки за пределы матрицы
+    If x < 0 Or y < 0 Or x > matrix.DimensionX Or y > matrix.DimensionY Then Exit Sub
+    
+    'Проверяем, не является ли указанная ячейка стеной
+    If matrix.GetOpenSpaceLayerValue(x, y) = 1 Then Exit Sub
+    
+    'Если до этого клетка не была заряжена, добавляем ее в коллекцию клеток получивших заряд в этом ходу
+    If matrix.GetPowerInOneStep(x, y) = 0 Then
+        matrix.chargedCells.Add CreateNewCell(x, y)
+    End If
+    
+    'Увеличиваем значение
+    matrix.SetCellValue x, y, mtrGettedPowerInOneStepLayer, matrix.GetPowerInOneStep(x, y) + value
+    
+End Sub
+
+
+Private Sub RizeCellFire(ByVal x As Long, ByVal y As Long)
+'Увеличиваем мощность горения клетки
+Const mmInInch As Double = 25.4
+Dim startFirePower As Double
+    startFirePower = matrix.GetActualFirePower(x, y)
+    
+    
+    'Если клетка неактивна и мощность полученная ей тоже равна 0, то выходим
+    If matrix.GetActualFirePower(x, y) = 0 And matrix.GetPowerInOneStep(x, y) = 0 Then Exit Sub
+
+    'Если клетка изначально была неактивной и при этом загорелась, то первым делом добавляем ее в коллекцию горящих клеток
+    If matrix.GetActualFirePower(x, y) = 0 And matrix.GetPowerInOneStep(x, y) > 0 Then
+        matrix.firedCells.Add CreateNewCell(x, y)
+        'Добавляем клетку в коллекцию активных клеток
+        AddToActiveCells x, y
+    End If
+
+    'Увеличиваем текущую мощность горения данной клетки
+    matrix.RizeCellFire x, y, matrix.GetPowerInOneStep(x, y)
+    
+    'Если клетка загорелась, но при этом еще горит не на полную мощность, добавляем ее в колекцию загорающихся клеток
+    If matrix.GetActualFirePower(x, y) > 0 And matrix.GetActualFirePower(x, y) < matrix.GetMaximumBurnPower Then
+        matrix.startedFireCells.Add CreateNewCell(x, y)
+    End If
+    
+    'Добавляем клетку в коллекцию клеток периметра, если мощность горения клетки максимальна
+    If startFirePower < matrix.GetMaximumBurnPower And matrix.GetFirePower(x, y) = matrix.GetMaximumBurnPower Then
+        AddToFrontCells x, y
+            
+            
+        'Отрисовываем квадрат
+        Dim shp As Visio.Shape
+        Set shp = Application.ActivePage.DrawRectangle(x * grain / mmInInch, y * grain / mmInInch, _
+                (x + 1) * grain / mmInInch, (y + 1) * grain / mmInInch)
+        shp.CellsSRC(visSectionObject, visRowLayerMem, visLayerMember).FormulaForceU = GetLayerNumber("Огонь")
+        shp.Cells("LinePattern").FormulaU = "0"
+        shp.Cells("FillForegnd").FormulaU = "2"
+
+
+'            DoEvents
+    End If
+
+    
+    'Очищаем значение полученной клеткой энергии
+    matrix.SetCellValue x, y, mtrGettedPowerInOneStepLayer, 0
+End Sub
+
+Private Sub AddToActiveCells(ByVal x As Long, ByVal y As Long)
+'Добавляем клетку в коллекцию активных клеток. Если же клетка с указанным ключем уже имеется - выходим
+    On Error Resume Next
+    matrix.activeFiredCells.Add CreateNewCell(x, y), x & ":" & y
+End Sub
+Private Sub RemoveFromActiveCells(ByVal x As Long, ByVal y As Long)
+'Удаляем клетку из коллекции активных клеток. Если же клетка с указанным ключем отсутствует - выходим
+    On Error Resume Next
+    matrix.activeFiredCells.Remove x & ":" & y
+End Sub
+
+Private Sub AddToFrontCells(ByVal x As Long, ByVal y As Long)
+'Добавляем клетку в коллекцию клеток периметра. Если же клетка с указанным ключем уже имеется - выходим
+    On Error Resume Next
+    matrix.fireFrontCells.Add CreateNewCell(x, y), x & ":" & y
+End Sub
+Private Sub RemoveFromFrontCells(ByVal x As Long, ByVal y As Long)
+'Удаляем клетку из коллекции клеток периметра. Если же клетка с указанным ключем отсутствует - выходим
+    On Error Resume Next
+    matrix.fireFrontCells.Remove x & ":" & y
+End Sub
+
+
+
+
+
+
+
+'-----------------------------Инструменты-------------------------------------------
+Private Function CreateNewCell(ByVal x As Long, ByVal y As Long) As c_Cell
+'Создаем новую клетку
+Dim cell As c_Cell
+    
+    Set cell = New c_Cell
+    Set cell.ParentMatrix = matrix
+    cell.x = x
+    cell.y = y
+    
+Set CreateNewCell = cell
+End Function
+
+
+'-----------------------------Разное-------------------------------------------
+Public Function GetFiredCellsCount() As Long
+    GetFiredCellsCount = matrix.firedCells.Count
+End Function
+Public Function GetActiveCellsCount() As Long
+    GetActiveCellsCount = matrix.activeFiredCells.Count
+End Function
+
