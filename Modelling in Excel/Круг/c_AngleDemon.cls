@@ -2,13 +2,13 @@ VERSION 1.0 CLASS
 BEGIN
   MultiUse = -1  'True
 END
-Attribute VB_Name = "c_CornerDemon"
+Attribute VB_Name = "c_AngleDemon"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 Option Explicit
-'---------------Класс демона движущегося вдоль стен------------------------------------------------
+'---------------Класс демона движущегося вдоль стен и определяющего угол стены------------------------------------------------
 Const PI = 3.1415926535
 
 Private x As Long
@@ -16,28 +16,29 @@ Private y As Long
 Private startX As Long
 Private startY As Long
 Private direction As Directions
+Private checkDistance As Byte
 
-Private mainAngle As Double
-Private perpAngle As Double
+Private lastCell As c_Cell
 
-Private lineFillDemon As c_CornerFillDemon
-
+Public mainAngle As Double          'Основной угол прямой
+Public perpAngle As Double          'Перпендикуляр к прямой
 
 Private Sub Class_Initialize()
-    direction = s       'Стоти на месте
-    Set lineFillDemon = New c_CornerFillDemon
+    direction = s       'Стоит на месте
+    checkDistance = 10   'По-умолчанию определяем на дистанции 10 клеток
+'    Set lineFillDemon = New c_CornerFillDemon
 End Sub
 
 
 
 
-Public Sub SetStartPosition(ByVal xVal As Long, ByVal yVal As Long)
+Private Sub SetStartPosition(ByVal xVal As Long, ByVal yVal As Long)
 'Ставим стартовые координаты демона
     startX = xVal
     startY = yVal
 End Sub
 
-Public Sub SetPosition(ByVal xVal As Long, ByVal yVal As Long)
+Private Sub SetPosition(ByVal xVal As Long, ByVal yVal As Long)
 'Ставим координаты демона
     x = xVal
     y = yVal
@@ -48,42 +49,35 @@ Public Sub SetDirection(ByVal dirct As Directions)
     direction = dirct
 End Sub
 
-Public Sub RunDemon()
+Public Sub SetCheckDistance(ByVal distance As Byte)
+'Задаем расстояние на котором нужно вычислить угол
+    checkDistance = distance
+End Sub
+
+
+
+Public Sub RunDemon(ByVal xVal As Long, ByVal yVal As Long)
 'Запукаем демона
 Dim i As Integer
     
-    'Запускаем другого демона для определения угла перпендикулярного стене
-    Dim angleDemon As c_AngleDemon
-    Set angleDemon = New c_AngleDemon
-    angleDemon.SetDirection direction
-    angleDemon.RunDemon x, y
+    'Ставим стартовые и текущие значения
+    SetStartPosition xVal, yVal
+    SetPosition xVal, yVal
     
-    mainAngle = angleDemon.mainAngle
-    perpAngle = angleDemon.perpAngle
-    
-    
-    'Демон пробегает по всем клеткам вдоль стены и каждый раз проверяет перпендикуляр к ней. Если демон не может корректно продолжить движение, либо же демон заливки не нашел по перпендикуляру горящих клеток, заканчиваем задание
+    'Демон пробегает по всем клеткам вдоль стены. Если демон не может корректно продолжить движение, либо же достиг дистанции проверки, заканчиваем цикл и определяем угол
     i = 0
     Do While NextCell
         i = i + 1
-        'Проверяем не выходит ли данная клетка за пределы допустимого угла
-        If Not isPossiblePlace Then Exit Do
-        
-        'Запускаем демона закрашивающего линию от текущего положения
-        If lineFillDemon.testLine(x, y, perpAngle) = False Then Exit Do
-        
-        'Байпасс - экстренный выход, если что-то пошло не так
-        If i > 100 Then
-            Exit Do
-        End If
+        If i > checkDistance Then Exit Do
     Loop
     
-    'Закрашиваем все клетки коллекции
-    lineFillDemon.FillCells
+    'Вычисляем угол между стартовой клеткой и той, в которой остановился демон, тут же передаем это значение для получения перпендикуляра
+    mainAngle = GetAngle
+    perpAngle = PerpendiculateCalc(mainAngle)
     
 End Sub
 
-Public Function NextCell() As Boolean
+Private Function NextCell() As Boolean
 'Выбираем следующую клетку
 
     'Если демон пока не движется - ищем направление
@@ -105,8 +99,8 @@ Public Function NextCell() As Boolean
             Exit Function
         End If
         'Ищем клетки в направлении левее по пути следования
-        If IsCellNearTheWallAndNotFireByDirection(NewDirection(-2)) Then
-            direction = NewDirection(-2)
+        If IsCellNearTheWallAndNotFireByDirection(NewDirection(-1)) Then
+            direction = NewDirection(-1)
             'Перемещаем демона
 '            Cells(y, x) = 0
             MoveDemon
@@ -114,8 +108,8 @@ Public Function NextCell() As Boolean
             Exit Function
         End If
         'Ищем клетки в направлении правее по пути следования
-        If IsCellNearTheWallAndNotFireByDirection(NewDirection(2)) Then
-            direction = NewDirection(2)
+        If IsCellNearTheWallAndNotFireByDirection(NewDirection(1)) Then
+            direction = NewDirection(1)
             'Перемещаем демона
 '            Cells(y, x) = 0
             MoveDemon
@@ -165,7 +159,7 @@ Private Sub MoveDemon()
         Case Else
             Debug.Print "Стоит!!! x=" & x & ", y=" & y
     End Select
-'    Debug.Print GetAngle
+    Debug.Print GetAngle
 End Sub
 
 Private Function IsCellNearTheWallAndNotFireByDirection(ByVal direct As Directions) As Boolean
@@ -190,7 +184,7 @@ Private Function IsCellNearTheWallAndNotFireByDirection(ByVal direct As Directio
 End Function
 
 Private Function IsCellNearTheWallAndNotFire(ByVal xVal As Long, ByVal yVal As Long) As Boolean
-'Провеяем находится ли клетка рядом со стеной (Только ортогонально!) И при этом не полностью горит и сам не является стеной
+'Провеяем находится ли клетка рядом со стеной (Только ортогонально!) И при этом не полностью горит и сама не является стеной
     If Cells(yVal, xVal) = 100 Or Cells(yVal, xVal) < 0 Then
         IsCellNearTheWallAndNotFire = False
         Exit Function
@@ -250,22 +244,22 @@ End Function
 Private Function FindDirection() As Directions
     
     'по диагонали
-'    If IsCellNearTheWallAndNotFire(x - 1, y - 1) Then
-'        FindDirection = ld
-'        Exit Function
-'    End If
-'    If IsCellNearTheWallAndNotFire(x + 1, y - 1) Then
-'        FindDirection = rd
-'        Exit Function
-'    End If
-'    If IsCellNearTheWallAndNotFire(x - 1, y + 1) Then
-'        FindDirection = lu
-'        Exit Function
-'    End If
-'    If IsCellNearTheWallAndNotFire(x + 1, y + 1) Then
-'        FindDirection = ru
-'        Exit Function
-'    End If
+    If IsCellNearTheWallAndNotFire(x - 1, y - 1) Then
+        FindDirection = ld
+        Exit Function
+    End If
+    If IsCellNearTheWallAndNotFire(x + 1, y - 1) Then
+        FindDirection = rd
+        Exit Function
+    End If
+    If IsCellNearTheWallAndNotFire(x - 1, y + 1) Then
+        FindDirection = lu
+        Exit Function
+    End If
+    If IsCellNearTheWallAndNotFire(x + 1, y + 1) Then
+        FindDirection = ru
+        Exit Function
+    End If
     'по ортогонали
     If IsCellNearTheWallAndNotFire(x, y - 1) Then
         FindDirection = d
@@ -291,11 +285,11 @@ Dim xDiff As Long
 Dim yDiff As Long
 
     On Error Resume Next
-
+    
     xDiff = x - startX
     yDiff = y - startY
-
-
+    
+    
     If xDiff = 0 Then
         If y > startY Then
             GetAngle = 90
@@ -305,29 +299,44 @@ Dim yDiff As Long
     Else
         GetAngle = Atn(yDiff / xDiff) * 180 / PI
     End If
-
+    
 End Function
 
-Private Function isPossiblePlace() As Boolean
-'Функция возвращает Истина, если данные координаты допустимы для клетки в рамках линии с данным углом
-Dim possibleDiff As Double
-Dim tolerance As Single
-Dim dist As Double
-Dim currentAngle As Double
-    
-    'Определяем допустимый предел отклонения угла
-    dist = Sqr((x - startX) ^ 2 + (y - startY) ^ 2)
-    tolerance = 1.01
-    possibleDiff = Atn(1 / dist) * (180 / PI) * tolerance
-    
-    'Получаем текущий угол
-    currentAngle = GetAngle
-    
-    'Проверяем, лежит ли угол к текущей клетке в допустимых пределах
-    If currentAngle < mainAngle + possibleDiff And currentAngle > mainAngle - possibleDiff Then
-        isPossiblePlace = True
-    Else
-        isPossiblePlace = False
+Private Function PerpendiculateCalc(ByVal angle As Double) As Double
+'Уточняем в какую сторону должен быть развернут перпендикуляр (с учетом расположения стены)
+Dim perpAngle As Double
+Dim xNew As Integer
+Dim yNew As Integer
+Dim cs As Double
+Dim sn As Double
+
+    'проверяем сначала одно направление перпендикуляра
+    perpAngle = angle + 90
+        'Определяем косинус и синус угла - для дальнейшего построения линии
+        cs = Cos(perpAngle * PI / 180)
+        sn = Sin(perpAngle * PI / 180)
+        
+        'Определяем новую точку - 1.5 берется, чтоб наверняка получить координату следующей точки, иначе она может совпасть с начальной
+        xNew = startX + Fix(cs * 1.5)
+        yNew = startY + Fix(sn * 1.5)
+
+        If Not IsWall(xNew, yNew) Then
+            PerpendiculateCalc = perpAngle
+        Else
+            PerpendiculateCalc = perpAngle - 180
+        End If
+        
+End Function
+
+Private Function IsWall(ByVal xVal As Long, ByVal yVal As Long) As Boolean
+'Возвращает Истина, если клетка - стена и Ложь, если нет
+    On Error GoTo EX
+    If Cells(yVal, xVal) < 0 Then
+        IsWall = True
+        Exit Function
     End If
-    
+EX:
+    IsWall = False
 End Function
+
+

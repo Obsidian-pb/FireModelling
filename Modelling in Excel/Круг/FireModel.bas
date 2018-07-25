@@ -1,11 +1,11 @@
 Attribute VB_Name = "FireModel"
 Const diag As Double = 0.1                                  ' 0.1
-Const orto As Double = 0.14142135623731                      'пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ - 0.14142135623731 (11 пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ 40)
-'                      0.13442135623731                     'пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ - 0.13442135623731 (4 пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ 40)
+Const orto As Double = 0.14142135623731                      'Вычисленное значение - 0.14142135623731 (11 выбросов на дистанции 40)
+'                      0.13442135623731                     'Экспериментальное оптимальное - 0.13442135623731 (4 выброса на дистанции 40)
 Const cellPowerModificator As Double = 1
 
-Const lowerBurnBound As Double = 7       'пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ (пїЅ пїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ)
-Const maximumBurnPower As Double = 100   'пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ)
+Const lowerBurnBound As Double = 7       'Нижняя граница при которой клетка начинает распространять горение на соседние (а так же вообще брабатывается)
+Const maximumBurnPower As Double = 100   'Максимальная мощность горения (после которой увеличение мощности прекращается)
 
 Dim matrix(102, 102) As Long
 
@@ -22,7 +22,7 @@ Dim matrix(102, 102) As Long
 
 
 Public Sub RoundsTillEnd()
-'пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅ, пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ 100
+'Выполняется ращзрастание до тех пор, пока указанная клетка не будет заполнена на 100
 Dim cell As Range
 Dim i As Integer
     
@@ -30,7 +30,7 @@ Dim i As Integer
 '    Clear
     Range("AK39").value = 100
     
-    Set cell = Range("AK89")            '"AK79" - пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ 40 пїЅпїЅпїЅпїЅпїЅпїЅ, "AK89" - пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ 50 пїЅпїЅпїЅпїЅпїЅпїЅ
+    Set cell = Range("AK89")            '"AK79" - на дистанции 40 клеток, "AK89" - на дистанции 50 клеток
 
     Do While cell.value < 100
         Round
@@ -73,7 +73,7 @@ Dim y As Integer
 End Sub
 
 Private Sub SetFires()
-'пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
+'Проверяем на горение клетки возле стен
 Dim x As Integer
 Dim y As Integer
 
@@ -103,17 +103,17 @@ Dim cellPower As Double
 
 
     If cellPower <= lowerBurnBound Or IsInner(x, y) Then Exit Sub
-    cellPower = cellPower * cellPowerModificator '* 4   ' 4 - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
+    cellPower = cellPower * cellPowerModificator '* 4   ' 4 - коэффициент нужен для сохранения прямой линии фронта
     
 
 
     
-    'пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+    'по диагонали
     AttackCell y - 1, x - 1, cellPower, cellPower * diag
     AttackCell y + 1, x - 1, cellPower, cellPower * diag
     AttackCell y - 1, x + 1, cellPower, cellPower * diag
     AttackCell y + 1, x + 1, cellPower, cellPower * diag
-    'пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+    'по ортогонали
     AttackCell y, x - 1, cellPower, cellPower * orto
     AttackCell y, x + 1, cellPower, cellPower * orto
     AttackCell y - 1, x, cellPower, cellPower * orto
@@ -137,28 +137,28 @@ Dim cellPower As Double
 
 
     If cellPower <= lowerBurnBound Or IsInner(x, y) Then Exit Sub
-    cellPower = cellPower * cellPowerModificator '* 4   ' 4 - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
+    cellPower = cellPower * cellPowerModificator '* 4   ' 4 - коэффициент нужен для сохранения прямой линии фронта
     
-    'пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
-    'пїЅпїЅпїЅпїЅпїЅпїЅ
+    'Проверяем наличие стен
+    'Вверху
     If IsWall(Cells(y + 1, x)) Then
         If Cells(y - 1, x).value > cellPower Then
             Cells(y, x).value = Cells(y - 1, x).value
         End If
     End If
-    'пїЅпїЅпїЅпїЅпїЅпїЅ
+    'Справа
     If IsWall(Cells(y, x + 1)) Then
         If Cells(y, x - 1).value > cellPower Then
             Cells(y, x).value = Cells(y, x - 1).value
         End If
     End If
-    'пїЅпїЅпїЅпїЅпїЅ
+    'Внизу
     If IsWall(Cells(y - 1, x)) Then
         If Cells(y + 1, x).value > cellPower Then
             Cells(y, x).value = Cells(y + 1, x).value
         End If
     End If
-    'пїЅпїЅпїЅпїЅпїЅ
+    'Слева
     If IsWall(Cells(y, x - 1)) Then
         If Cells(y, x + 1).value > cellPower Then
             Cells(y, x).value = Cells(y, x + 1).value
@@ -172,9 +172,9 @@ Private Function IsWall(rng As Range) As Boolean
 End Function
 
 Public Function IsInner(x As Integer, y As Integer) As Boolean
-'пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅ - пїЅпїЅпїЅпїЅ
+'Возвращаем Истина, если клетка окружена горящими, иначе - Ложь
     IsInner = True
-    'пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+    'по диагонали
     If Cells(y - 1, x - 1).value < maximumBurnPower Then
         IsInner = False
         Exit Function
@@ -191,7 +191,7 @@ Public Function IsInner(x As Integer, y As Integer) As Boolean
         IsInner = False
         Exit Function
     End If
-    'пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+    'по ортогонали
     If Cells(y, x - 1).value < maximumBurnPower Then
         IsInner = False
         Exit Function

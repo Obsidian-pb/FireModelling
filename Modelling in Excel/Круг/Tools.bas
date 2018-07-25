@@ -37,3 +37,9 @@ Dim y As Integer
     Next x
 
 End Sub
+
+Public Function GetAngle(x As Double, y As Double) As Double
+'Функция вычисляет угол между двумя точками
+Const PI = 3.1415926535
+    GetAngle = Atn(x / y) * (180 / 3.1415926535)
+End Function

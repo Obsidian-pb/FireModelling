@@ -32,7 +32,7 @@ Dim j As Integer
 Dim cellType As Byte
     
     'ƒобавл€ем стартовую клетку
-    AddToCellCollection startX, startY
+'    AddToCellCollection startX, startY
     
     '«аранее определ€ем косинус и синус угла - дл€ дальнейшего построени€ линии
     cs = Cos(angle * PI / 180)
@@ -41,13 +41,13 @@ Dim cellType As Byte
     'ѕоследовательно провер€ем все клеткии линии, на предмет того, €вл€ютс€ они пустой клеткой, гор€щей клеткой или же клеткой стены
     i = 0
     Do While cellType = 0
-        i = i + 1
-        If i > 100 Then Exit Do
-        
         x = startX + Int(cs * i)
         y = startY + Int(sn * i)
         
         cellType = GetKindOfCell(x, y)
+        
+        i = i + 1
+        If i > 100 Then Exit Do
     Loop
 
     
@@ -60,7 +60,7 @@ Dim cellType As Byte
 
     '¬носим все клетки в коллекцию клеток дл€ последующего закрашивани€
     If cellType = 1 Then
-        For j = 1 To i
+        For j = 0 To i
             x = startX + Int(cs * j)
             y = startY + Int(sn * j)
             
