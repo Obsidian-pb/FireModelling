@@ -90,7 +90,6 @@ End Sub
 
 Public Sub SetFireCell(ByVal x As Long, ByVal y As Long, Optional value As Double)
 'Создаем новую точку горения
-'Dim cell As c_Cell
     
     'Если указанная точка является стеной - выходим из процедуры
     If openSpaceLayer(x, y) = CellState.csWall Then Exit Sub
@@ -98,15 +97,14 @@ Public Sub SetFireCell(ByVal x As Long, ByVal y As Long, Optional value As Doubl
     'Указываем данные новой точки
     If value = 0 Then
         currentgPowerLayer(x, y) = maximumBurnPower
+        'добавляем в коллекцию фронта пожара
+        fireFrontCells.Add CreateNewCell(x, y), x & ":" & y
     Else
         currentgPowerLayer(x, y) = value
     End If
     
     'Добавляем запись о горящей точке в коллекцию
     firedCells.Add CreateNewCell(x, y)
-    
-    'Так же добавляем запись о горящей точке в коллекцию активных клеток
-    activeFiredCells.Add CreateNewCell(x, y)
 End Sub
 
 
@@ -338,14 +336,25 @@ End Function
 
 Public Function IsWall(ByVal x As Long, ByVal y As Long) As Boolean
 'Проверяем, находится ли в указанной клетке стена
+    On Error GoTo EX
     If openSpaceLayer(x, y) = 1 Then
         IsWall = True
     Else
         IsWall = False
     End If
+Exit Function
+EX:
+    IsWall = True
 End Function
 
-
+Public Function IsCellMaxFire(ByVal x As Long, ByVal y As Long) As Boolean
+'Проверяем, горит ли клетка на полную мощность
+    On Error GoTo EX
+    IsCellMaxFire = currentgPowerLayer(x, y) = maximumBurnPower
+Exit Function
+EX:
+    IsCellMaxFire = False
+End Function
 
 
 

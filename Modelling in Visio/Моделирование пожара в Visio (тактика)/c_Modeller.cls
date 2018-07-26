@@ -27,6 +27,8 @@ End Sub
 Public Sub SetFireCell(ByVal x As Long, ByVal y As Long, Optional value As Double)
 'Создаем новую точку горения
     matrix.SetFireCell x, y, value
+    'Добавляем запись о горящей точке в коллекцию активных клеток и клеток периметра
+    AddToActiveCells x, y
 End Sub
 
 
@@ -72,12 +74,15 @@ Dim cell As c_Cell
     Next cell
 
     
-    '--------------------
+    '--------------------ПЕРЕДЕЛАТЬ ПОЛНОСТЬЮ с использованием демонов
     'Спрямляем горение у стен (проверяем все клетки, что получили энергию, но еще не горят полностью))
     Dim shp As Visio.Shape
+    Dim cornerDemon As c_CornerDemon
+    Set cornerDemon = New c_CornerDemon
+    cornerDemon.Init matrix, 0, 0
     For Each cell In matrix.fireFrontCells
         If matrix.IsTripleStateCell(cell.x, cell.y) Then
-            matrix.keyCornerCells.Add cell
+        
         '!!!Отрисовываем квадрат если клетка является ключевой
 
             Set shp = Application.ActivePage.DrawRectangle(cell.x * grain / mmInInch, cell.y * grain / mmInInch, _
@@ -85,10 +90,27 @@ Dim cell As c_Cell
             shp.CellsSRC(visSectionObject, visRowLayerMem, visLayerMember).FormulaForceU = GetLayerNumber("Угловые точки")
             shp.Cells("LinePattern").FormulaU = "0"
             shp.Cells("FillForegnd").FormulaU = "3"
+            'Запускаем демона отрисовщика
+'            Set cornerDemon = New c_CornerDemon
+'            Debug.Assert cell.x <> 68 And cell.y <> 116
+            cornerDemon.SetStartPosition cell.x, cell.y
+            cornerDemon.SetDirection s
+            cornerDemon.RunDemon
         End If
     Next cell
-
-
+    
+'    Debug.Print "Точек под заливку" & cornerDemon.lineFillDemon.cellsForFill.Count
+    For Each cell In cornerDemon.lineFillDemon.cellsForFill
+        RizeCellFireToMax cell.x, cell.y
+    Next cell
+    
+    
+    For Each cell In matrix.activeFiredCells
+        If matrix.IsInner(cell.x, cell.y) Then
+            RemoveFromActiveCells cell.x, cell.y
+            RemoveFromFrontCells cell.x, cell.y
+        End If
+    Next cell
     
 End Sub
 
@@ -142,7 +164,6 @@ End Sub
 
 Private Sub RizeCellFire(ByVal x As Long, ByVal y As Long)
 'Увеличиваем мощность горения клетки
-Const mmInInch As Double = 25.4
 Dim startFirePower As Double
     startFirePower = matrix.GetActualFirePower(x, y)
     
@@ -187,6 +208,41 @@ Dim startFirePower As Double
     matrix.SetCellValue x, y, mtrGettedPowerInOneStepLayer, 0
 End Sub
 
+Private Sub RizeCellFireToMax(ByVal x As Long, ByVal y As Long)
+'Указываем, что клетка горит на максимум (процедура для дорисовки при переходе к прямоугольной форме)
+    'Если клетка изначально была неактивной и при этом загорелась, то первым делом добавляем ее в коллекцию горящих клеток
+    If matrix.GetActualFirePower(x, y) = 0 Then
+        matrix.firedCells.Add CreateNewCell(x, y)
+        'Добавляем клетку в коллекцию активных клеток
+'        AddToActiveCells x, y
+    End If
+
+    'Увеличиваем текущую мощность горения данной клетки
+    matrix.SetFireCell x, y
+       
+    'Добавляем клетку в коллекцию клеток периметра, если мощность горения клетки максимальна
+'    If startFirePower < matrix.GetMaximumBurnPower And matrix.GetFirePower(x, y) = matrix.GetMaximumBurnPower Then
+        
+        AddToFrontCells x, y
+        AddToActiveCells x, y
+            
+        'Отрисовываем квадрат
+        Dim shp As Visio.Shape
+        Set shp = Application.ActivePage.DrawRectangle(x * grain / mmInInch, y * grain / mmInInch, _
+                (x + 1) * grain / mmInInch, (y + 1) * grain / mmInInch)
+        shp.CellsSRC(visSectionObject, visRowLayerMem, visLayerMember).FormulaForceU = GetLayerNumber("Огонь")
+        shp.Cells("LinePattern").FormulaU = "0"
+        shp.Cells("FillForegnd").FormulaU = "2"
+
+
+'            DoEvents
+'    End If
+
+    
+    'Очищаем значение полученной клеткой энергии
+    matrix.SetCellValue x, y, mtrGettedPowerInOneStepLayer, 0
+End Sub
+
 Private Sub AddToActiveCells(ByVal x As Long, ByVal y As Long)
 'Добавляем клетку в коллекцию активных клеток. Если же клетка с указанным ключем уже имеется - выходим
     On Error Resume Next
@@ -218,6 +274,8 @@ End Sub
 '-----------------------------Инструменты-------------------------------------------
 Private Function CreateNewCell(ByVal x As Long, ByVal y As Long) As c_Cell
 'Создаем новую клетку
+    On Error GoTo EX
+
 Dim cell As c_Cell
     
     Set cell = New c_Cell
@@ -226,6 +284,9 @@ Dim cell As c_Cell
     cell.y = y
     
 Set CreateNewCell = cell
+Exit Function
+EX:
+     Debug.Print "err"
 End Function
 
 
@@ -237,3 +298,48 @@ Public Function GetActiveCellsCount() As Long
     GetActiveCellsCount = matrix.activeFiredCells.Count
 End Function
 
+
+
+
+
+
+
+'-------Тестовая процедура
+Public Sub DrawActiveCells()
+'Отрисовываем квадрат
+Dim cell As c_Cell
+    
+    For Each cell In matrix.activeFiredCells
+        Dim shp As Visio.Shape
+        Set shp = Application.ActivePage.DrawRectangle(cell.x * grain / mmInInch, cell.y * grain / mmInInch, _
+                (cell.x + 1) * grain / mmInInch, (cell.y + 1) * grain / mmInInch)
+        shp.CellsSRC(visSectionObject, visRowLayerMem, visLayerMember).FormulaForceU = GetLayerNumber("Огонь")
+        shp.Cells("LinePattern").FormulaU = "0"
+        shp.Cells("FillForegnd").FormulaU = "2"
+    Next cell
+End Sub
+
+Public Sub DrawFrontCells()
+'Отрисовываем квадрат
+Dim cell As c_Cell
+    
+    For Each cell In matrix.fireFrontCells
+        Dim shp As Visio.Shape
+        Set shp = Application.ActivePage.DrawRectangle(cell.x * grain / mmInInch, cell.y * grain / mmInInch, _
+                (cell.x + 1) * grain / mmInInch, (cell.y + 1) * grain / mmInInch)
+        shp.CellsSRC(visSectionObject, visRowLayerMem, visLayerMember).FormulaForceU = GetLayerNumber("Огонь")
+        shp.Cells("LinePattern").FormulaU = "0"
+        shp.Cells("FillForegnd").FormulaU = "2"
+    Next cell
+End Sub
+
+Public Sub RemoveActive()
+Dim cell As c_Cell
+
+    For Each cell In matrix.activeFiredCells
+        If matrix.IsInner(cell.x, cell.y) Then
+            RemoveFromActiveCells cell.x, cell.y
+            RemoveFromFrontCells cell.x, cell.y
+        End If
+    Next cell
+End Sub

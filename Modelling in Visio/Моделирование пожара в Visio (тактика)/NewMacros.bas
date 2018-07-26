@@ -1,4 +1,7 @@
 Attribute VB_Name = "NewMacros"
+'Служебные макросы - нужны, для работы с самой схемой и отношения к моделированию не имют
+
+
 Sub УДалитьПространство()
 
     Dim vsoSelection1 As Visio.Selection
