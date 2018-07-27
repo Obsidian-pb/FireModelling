@@ -90,10 +90,13 @@ Dim cell As c_Cell
             shp.CellsSRC(visSectionObject, visRowLayerMem, visLayerMember).FormulaForceU = GetLayerNumber("Угловые точки")
             shp.Cells("LinePattern").FormulaU = "0"
             shp.Cells("FillForegnd").FormulaU = "3"
+            
             'Запускаем демона отрисовщика
-'            Set cornerDemon = New c_CornerDemon
-'            Debug.Assert cell.x <> 68 And cell.y <> 116
             cornerDemon.SetStartPosition cell.x, cell.y
+            cornerDemon.SetDirection s
+            cornerDemon.RunDemon
+
+            'Повторяем попытку найти путь - для корректной обработки ситуаций, когда демон может двигаться в двух направлениях (актуально для наклонных стен)
             cornerDemon.SetDirection s
             cornerDemon.RunDemon
         End If

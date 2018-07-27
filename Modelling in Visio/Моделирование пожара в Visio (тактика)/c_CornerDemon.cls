@@ -90,10 +90,7 @@ Dim i As Integer
             Exit Do
         End If
     Loop
-    
-'    '«акрашиваем все клетки коллекции (выполн€етс€ в Modeller)
-'    lineFillDemon.FillCells
-    
+       
 End Sub
 
 
@@ -106,6 +103,13 @@ Private Function NextCell() As Boolean
     '≈сли демон пока не движетс€ - ищем направление
     If direction = s Then
         direction = FindDirection
+        
+        '≈сли найти направление движени€ не удалось - выходим
+        If direction = s Then
+            NextCell = False
+            Exit Function
+        End If
+        
         'ѕеремещаем демона
         MoveDemon
         NextCell = True
@@ -148,31 +152,23 @@ Private Sub MoveDemon()
 'ѕеремещаем демона в текущем направлении
     Select Case direction
         Case Is = l
-'            Cells(y, x - 1) = 100
             x = x - 1
         Case Is = lu
-'            Cells(y + 1, x - 1) = 100
             y = y + 1
             x = x - 1
         Case Is = u
-'            Cells(y + 1, x) = 100
             y = y + 1
         Case Is = ru
-'            Cells(y + 1, x + 1) = 100
             y = y + 1
             x = x + 1
         Case Is = r
-'            Cells(y, x + 1) = 100
             x = x + 1
         Case Is = rd
-'            Cells(y - 1, x + 1) = 100
             y = y - 1
             x = x + 1
         Case Is = d
-'            Cells(y - 1, x) = 100
             y = y - 1
         Case Is = ld
-'            Cells(y - 1, x - 1) = 100
             y = y - 1
             x = x - 1
         Case Else
@@ -266,22 +262,22 @@ End Function
 Private Function FindDirection() As Directions
     
     'по диагонали
-'    If IsCellNearTheWallAndNotFire(x - 1, y - 1) Then
-'        FindDirection = ld
-'        Exit Function
-'    End If
-'    If IsCellNearTheWallAndNotFire(x + 1, y - 1) Then
-'        FindDirection = rd
-'        Exit Function
-'    End If
-'    If IsCellNearTheWallAndNotFire(x - 1, y + 1) Then
-'        FindDirection = lu
-'        Exit Function
-'    End If
-'    If IsCellNearTheWallAndNotFire(x + 1, y + 1) Then
-'        FindDirection = ru
-'        Exit Function
-'    End If
+    If IsCellNearTheWallAndNotFire(x - 1, y - 1) Then
+        FindDirection = ld
+        Exit Function
+    End If
+    If IsCellNearTheWallAndNotFire(x + 1, y - 1) Then
+        FindDirection = rd
+        Exit Function
+    End If
+    If IsCellNearTheWallAndNotFire(x - 1, y + 1) Then
+        FindDirection = lu
+        Exit Function
+    End If
+    If IsCellNearTheWallAndNotFire(x + 1, y + 1) Then
+        FindDirection = ru
+        Exit Function
+    End If
     'по ортогонали
     If IsCellNearTheWallAndNotFire(x, y - 1) Then
         FindDirection = d
@@ -319,7 +315,24 @@ Dim yDiff As Long
             GetAngle = -90
         End If
     Else
-        GetAngle = Atn(yDiff / xDiff) * 180 / PI
+        'ќбрабатываем четверти
+        '1-€ четверть
+        If xDiff > 0 And yDiff > 0 Then
+            GetAngle = Atn(yDiff / xDiff) * 180 / PI
+        End If
+        '2-€ четверть
+        If xDiff < 0 And yDiff > 0 Then
+            GetAngle = Atn(yDiff / xDiff) * 180 / PI + 180
+        End If
+        '3-€ четверть
+        If xDiff < 0 And yDiff < 0 Then
+            GetAngle = Atn(yDiff / xDiff) * 180 / PI + 180
+        End If
+        '4-€ четверть
+        If xDiff > 0 And yDiff < 0 Then
+            GetAngle = Atn(yDiff / xDiff) * 180 / PI
+        End If
+        
     End If
 
 End Function

@@ -24,10 +24,6 @@ Private lastCell As c_Cell
 Public mainAngle As Double          'Основной угол прямой
 Public perpAngle As Double          'Перпендикуляр к прямой
 
-'Private Sub Class_Initialize()
-'    direction = s       'Стоит на месте
-'    checkDistance = 10   'По-умолчанию определяем на дистанции 10 клеток
-'End Sub
 
 
 
@@ -96,6 +92,13 @@ Private Function NextCell() As Boolean
     'Если демон пока не движется - ищем направление
     If direction = s Then
         direction = FindDirection
+        
+        'Если найти направление движения не удалось - выходим
+        If direction = s Then
+            NextCell = False
+            Exit Function
+        End If
+        
         'Перемещаем демона
         MoveDemon
         NextCell = True
@@ -158,9 +161,8 @@ Private Sub MoveDemon()
             y = y - 1
             x = x - 1
         Case Else
-            Debug.Print "Стоит!!! x=" & x & ", y=" & y
+'            Debug.Print "Стоит!!! x=" & x & ", y=" & y
     End Select
-'    Debug.Print GetAngle
 End Sub
 
 Private Function IsCellNearTheWallAndNotFireByDirection(ByVal direct As Directions) As Boolean
@@ -309,7 +311,23 @@ Dim yDiff As Long
             GetAngle = -90
         End If
     Else
-        GetAngle = Atn(yDiff / xDiff) * 180 / PI
+        'Обрабатываем четверти
+        '1-я четверть
+        If xDiff > 0 And yDiff > 0 Then
+            GetAngle = Atn(yDiff / xDiff) * 180 / PI
+        End If
+        '2-я четверть
+        If xDiff < 0 And yDiff > 0 Then
+            GetAngle = Atn(yDiff / xDiff) * 180 / PI + 180
+        End If
+        '3-я четверть
+        If xDiff < 0 And yDiff < 0 Then
+            GetAngle = Atn(yDiff / xDiff) * 180 / PI + 180
+        End If
+        '4-я четверть
+        If xDiff > 0 And yDiff < 0 Then
+            GetAngle = Atn(yDiff / xDiff) * 180 / PI
+        End If
     End If
     
 End Function
@@ -335,9 +353,11 @@ Dim sn As Double
         If Not matrix.IsWall(xNew, yNew) Then
             PerpendiculateCalc = perpAngle
         Else
+            'Обрабатываем исключение при -180 градусах
+            If perpAngle = 0 Then perpAngle = 360
+            
             PerpendiculateCalc = perpAngle - 180
         End If
-        
 End Function
 
 
