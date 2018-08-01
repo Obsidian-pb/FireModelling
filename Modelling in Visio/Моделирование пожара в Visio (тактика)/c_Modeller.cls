@@ -29,6 +29,20 @@ Public Sub SetFireCell(ByVal x As Long, ByVal y As Long, Optional value As Doubl
     matrix.SetFireCell x, y, value
     'Добавляем запись о горящей точке в коллекцию активных клеток и клеток периметра
     AddToActiveCells x, y
+    
+    'Insert Firepoint as Visio Shape
+        Dim shp As Visio.Shape
+        Set shp = Application.ActivePage.DrawRectangle(x * grain / mmInInch, y * grain / mmInInch, _
+                (x + 1) * grain / mmInInch, (y + 1) * grain / mmInInch)
+'        shp.CellsSRC(visSectionObject, visRowLayerMem, visLayerMember).FormulaForceU = GetLayerNumber("Огонь")
+        shp.CellsSRC(visSectionObject, visRowLayerMem, visLayerMember).FormulaForceU = GetLayerNumber("Fire")
+        shp.Cells("LinePattern").FormulaU = "0"
+        shp.Cells("FillForegnd").FormulaU = "2"
+'        shp.Cells("LinePattern").FormulaU = "1"
+'        shp.Cells("LineColor").FormulaU = "2"
+'        shp.Cells("FillPattern").FormulaU = "0"
+        
+        
 End Sub
 
 
@@ -85,11 +99,11 @@ Dim cell As c_Cell
         
         '!!!Отрисовываем квадрат если клетка является ключевой
 
-            Set shp = Application.ActivePage.DrawRectangle(cell.x * grain / mmInInch, cell.y * grain / mmInInch, _
-                    (cell.x + 1) * grain / mmInInch, (cell.y + 1) * grain / mmInInch)
-            shp.CellsSRC(visSectionObject, visRowLayerMem, visLayerMember).FormulaForceU = GetLayerNumber("Угловые точки")
-            shp.Cells("LinePattern").FormulaU = "0"
-            shp.Cells("FillForegnd").FormulaU = "3"
+'            Set shp = Application.ActivePage.DrawRectangle(cell.x * grain / mmInInch, cell.y * grain / mmInInch, _
+'                    (cell.x + 1) * grain / mmInInch, (cell.y + 1) * grain / mmInInch)
+'            shp.CellsSRC(visSectionObject, visRowLayerMem, visLayerMember).FormulaForceU = GetLayerNumber("Угловые точки")
+'            shp.Cells("LinePattern").FormulaU = "0"
+'            shp.Cells("FillForegnd").FormulaU = "3"
             
             'Запускаем демона отрисовщика
             cornerDemon.SetStartPosition cell.x, cell.y
@@ -198,10 +212,13 @@ Dim startFirePower As Double
         Dim shp As Visio.Shape
         Set shp = Application.ActivePage.DrawRectangle(x * grain / mmInInch, y * grain / mmInInch, _
                 (x + 1) * grain / mmInInch, (y + 1) * grain / mmInInch)
-        shp.CellsSRC(visSectionObject, visRowLayerMem, visLayerMember).FormulaForceU = GetLayerNumber("Огонь")
+'        shp.CellsSRC(visSectionObject, visRowLayerMem, visLayerMember).FormulaForceU = GetLayerNumber("Огонь")
+        shp.CellsSRC(visSectionObject, visRowLayerMem, visLayerMember).FormulaForceU = GetLayerNumber("Fire")
         shp.Cells("LinePattern").FormulaU = "0"
         shp.Cells("FillForegnd").FormulaU = "2"
-
+'        shp.Cells("LinePattern").FormulaU = "1"
+'        shp.Cells("LineColor").FormulaU = "2"
+'        shp.Cells("FillPattern").FormulaU = "0"
 
 '            DoEvents
     End If
@@ -233,10 +250,12 @@ Private Sub RizeCellFireToMax(ByVal x As Long, ByVal y As Long)
         Dim shp As Visio.Shape
         Set shp = Application.ActivePage.DrawRectangle(x * grain / mmInInch, y * grain / mmInInch, _
                 (x + 1) * grain / mmInInch, (y + 1) * grain / mmInInch)
-        shp.CellsSRC(visSectionObject, visRowLayerMem, visLayerMember).FormulaForceU = GetLayerNumber("Огонь")
+        shp.CellsSRC(visSectionObject, visRowLayerMem, visLayerMember).FormulaForceU = GetLayerNumber("Fire")
         shp.Cells("LinePattern").FormulaU = "0"
         shp.Cells("FillForegnd").FormulaU = "2"
-
+'        shp.Cells("LinePattern").FormulaU = "1"
+'        shp.Cells("LineColor").FormulaU = "2"
+'        shp.Cells("FillPattern").FormulaU = "0"
 
 '            DoEvents
 '    End If

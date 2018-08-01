@@ -8,7 +8,7 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = True
 Dim fireModeller As c_Modeller
-Const grain As Integer = 100
+Const grain As Integer = 50
 
 
 Public Sub ErrMsg()
@@ -42,16 +42,14 @@ Dim matrixBuilder As c_MatrixBuilder
     Set fireModeller = New c_Modeller
     fireModeller.SetMatrix matrixObj
     
-    'Ищем фигуры очага и по их координатам сутанавливаем точки начала пожара
-    GetFirePoints
-    
     'Указываем модельеру значение зерна
     fireModeller.grain = grain
 
-
+    'Ищем фигуры очага и по их координатам сутанавливаем точки начала пожара
+    GetFirePoints
 
     '---Печатаем сколько потребовалось времени
-    MsgBox "Матрица запечена за " & tmr.GetElapsedTime & " сек." & Chr(10) & Chr(13) & "Зерно " & grain & "мм."
+'    MsgBox "Матрица запечена за " & tmr.GetElapsedTime & " сек." & Chr(10) & Chr(13) & "Зерно " & grain & "мм."
     
     Debug.Print "Матрица запечена..."
     tmr.PrintElapsedTime
@@ -73,11 +71,15 @@ Public Sub RoundFire()
     
     Dim i As Integer
     Dim j As Integer
-    For i = 0 To 50
-        ClearLayer "Огонь"
+    For i = 0 To 100
+'        ClearLayer "Огонь"
+'        ClearLayer "Fire"
         For j = 0 To 1
-            ClearLayer "Угловые точки"
+'            ClearLayer "Угловые точки"
             fireModeller.OneRound
+            
+            'union fired cells into one shape
+            MakeShape
         Next j
 
         '---Печатаем сколько потребовалось времени
@@ -145,7 +147,17 @@ Dim yIndex As Integer
 
 End Sub
 
+Private Sub MakeShape()
 
+    On Error Resume Next
+
+    Dim vsoSelection As Visio.Selection
+    Set vsoSelection = Application.ActiveWindow.Page.CreateSelection(visSelTypeByLayer, visSelModeSkipSuper, "Fire")
+    
+    vsoSelection.Union
+    
+    Application.ActiveWindow.Selection(1).CellsSRC(visSectionObject, visRowLayerMem, visLayerMember).FormulaForceU = GetLayerNumber("Fire")
+End Sub
 
 
 
