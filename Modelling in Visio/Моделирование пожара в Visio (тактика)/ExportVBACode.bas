@@ -10,23 +10,29 @@ End Sub
 Public Sub ExportVBA(sDestinationFolder As String)
 'Собственно экспорт кода
     Dim oVBComponent As Object
+    Dim fullName As String
 
     For Each oVBComponent In Application.ActiveDocument.VBProject.VBComponents
         If oVBComponent.Type = 1 Then
             ' Standard Module
-            oVBComponent.Export sDestinationFolder & oVBComponent.Name & ".bas"
+            fullName = sDestinationFolder & oVBComponent.Name & ".bas"
+            oVBComponent.Export fullName
         ElseIf oVBComponent.Type = 2 Then
             ' Class
-            oVBComponent.Export sDestinationFolder & oVBComponent.Name & ".cls"
+            fullName = sDestinationFolder & oVBComponent.Name & ".cls"
+            oVBComponent.Export fullName
         ElseIf oVBComponent.Type = 3 Then
             ' Form
-            oVBComponent.Export sDestinationFolder & oVBComponent.Name & ".frm"
+            fullName = sDestinationFolder & oVBComponent.Name & ".frm"
+            oVBComponent.Export fullName
         ElseIf oVBComponent.Type = 100 Then
             ' Document
-            oVBComponent.Export sDestinationFolder & oVBComponent.Name & ".bas"
+            fullName = sDestinationFolder & oVBComponent.Name & ".bas"
+            oVBComponent.Export fullName
         Else
             ' UNHANDLED/UNKNOWN COMPONENT TYPE
         End If
+        Debug.Print "Сохранен " & fullName
     Next oVBComponent
 
 End Sub
