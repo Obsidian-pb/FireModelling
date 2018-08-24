@@ -3,6 +3,7 @@ Dim fireModeller As c_Modeller
 Dim frmSettingsForm As SettingsForm
 Public grain As Integer
 
+Public stopModellingFlag As Boolean      'Флаг остановки моделирования
 
 '------------------------Модуль для построения площади пожара с использованием тактического метода-------------------------------------------------
 
@@ -79,6 +80,8 @@ Public Sub RunFire(ByVal timeElapsed As Single, ByVal speed As Single)
     Dim currentDistance As Single           'Текущее пройденное расстояние
     Dim prevDistance As Single              'Расстояние пройденное на предыдущем этапе расчета
     Dim diffDistance As Single              'Расстяоине пройденное в данном этапе расчета
+    Dim realCurrentDistance As Single       'Реальное Текущее пройденное расстояние
+    Dim realDiffDistance As Single          'Реальное Расстяоине пройденное в данном этапе расчета
     Dim currentTime As Single               'Текущее время с начала расчета
     Dim prevTime As Single                  'Время за которое проейден предыдущий этап расчета
     Dim diffTime As Single                  'Время за которое проейден текущий этап расчета
@@ -89,14 +92,30 @@ Public Sub RunFire(ByVal timeElapsed As Single, ByVal speed As Single)
     
     prevTime = fireModeller.time
     
-    Do While currentDistance < boundDistance
-        fireModeller.OneRound
-            
-        'Объединяем добавленные точки в одну фигуру
-        MakeShape
+    Do While diffTime < timeElapsed
+        'Проверяем, сколько времени длится расчет, если меньше 10 минут, то расчитываем, только каждый второй шаг, т.е., с половиной скорости
+        If currentTime < 10 Then
+            'При вермени менее 10 минут считаем рост только каждый второй шаг
+            If IsEven(fireModeller.CurrentStep) Then
+                fireModeller.OneRound
+
+                'Объединяем добавленные точки в одну фигуру
+                MakeShape
+            End If
+        Else
+            fireModeller.OneRound
+                
+            'Объединяем добавленные точки в одну фигуру
+            MakeShape
+        End If
         
+        'Увеличиваем шаг расчета
+        fireModeller.RizeCurrentStep
+            
         currentDistance = GetWayLen(fireModeller.CurrentStep, grain)
         diffDistance = currentDistance - prevDistance
+        realCurrentDistance = GetWayLen(fireModeller.CalculatedStep, grain)
+        realDiffDistance = realCurrentDistance - prevDistance
         
         currentTime = currentDistance / speed
         diffTime = currentTime - prevTime
@@ -105,17 +124,23 @@ Public Sub RunFire(ByVal timeElapsed As Single, ByVal speed As Single)
         On Error Resume Next
         '---Печатаем сколько потребовалось времени
         SettingsForm.lblCurrentStatus.Caption = "Шаг: " & i & "(" & fireModeller.CurrentStep & "), " & _
-                                                " пройденный путь: " & Round(diffDistance, 2) & "(" & Round(currentDistance, 2) & ")м.," & _
-                                                " время: " & Round(diffTime, 2) & "(" & Round(currentTime, 2) & ")мин"
+                                                " пройденный путь: " & Round(realDiffDistance, 2) & "(" & Round(realCurrentDistance, 2) & ")м.," & _
+                                                " время: " & Round(diffTime, 2) & "(" & Round(currentTime, 2) & ")мин " & _
+                                                "Площадь пожара: " & fireModeller.GetFireSquare & "м.кв."
         On Error GoTo EX
         
         i = i + 1
         
         Application.ActiveWindow.DeselectAll
         DoEvents
+        
+        'Если пользователь нажал в форме кнопку "Остановить" прекращаем моделирвоание
+        If stopModellingFlag Then
+            Exit Do
+        End If
     Loop
     
-    fireModeller.distance = currentDistance
+    fireModeller.distance = realCurrentDistance ' currentDistance
     fireModeller.time = currentTime
         
     Debug.Print "Всего затрачено " & tmr2.GetElapsedTime & "с."
@@ -242,11 +267,8 @@ Public Function GetStepsCount(ByVal grain As Integer, ByVal speed As Single, ByV
     
     '2 определить собственно сколько нужно шагов для достижения
     Dim tmpVal As Integer
-'    tmpVal = (firePathLen + 1.669) / 0.58
     tmpVal = firePathLen / 0.58
-'    If fireModeller.CurrentStep > 3 Then
-'        tmpVal = tmpVal - 1
-'    End If
+
     GetStepsCount = IIf(tmpVal < 0, 0, tmpVal)
     
 End Function
@@ -262,10 +284,11 @@ End Function
 Public Function CalculateWayLen(ByVal stepsCount As Integer) As Integer
 'Функция возвращает пройденный путь в клетках
     Dim tmpVal As Integer
-'    tmpVal = 0.58 * stepsCount - 1.669
     tmpVal = 0.58 * stepsCount
     CalculateWayLen = IIf(tmpVal < 0, 0, tmpVal)
 End Function
+
+
 
 'Public Function GetStatusString(ByVal step As Integer, ByVal grain As Integer, ByVal speed As Single) As String
 ''Функция возвращает статусную строку
@@ -289,4 +312,9 @@ End Function
 Public Function IsMatrixBacked() As Boolean
 'Возвращает Истина, если матрица уже запечена и Ложь, если нет
     IsMatrixBacked = Not fireModeller Is Nothing
+End Function
+
+Private Function IsEven(ByVal number As Integer) As Boolean
+'Проверяем, четное ли число
+    IsEven = Int(number / 2) = number / 2
 End Function

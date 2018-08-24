@@ -4,7 +4,7 @@ Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} SettingsForm
    ClientHeight    =   4020
    ClientLeft      =   45
    ClientTop       =   375
-   ClientWidth     =   7515
+   ClientWidth     =   8640
    OleObjectBlob   =   "SettingsForm.frx":0000
    ShowModal       =   0   'False
    StartUpPosition =   1  'CenterOwner
@@ -18,6 +18,10 @@ Dim matrixSize As Long          'Количество клеток в матрице
 Dim matrixChecked As Long       'Количество проверенных клеток
 
 
+
+Private Sub btnStopModelling_Click()
+    stopModellingFlag = True
+End Sub
 
 '------------------------Процедуры, собственно формы--------------------------
 Private Sub UserForm_Activate()
@@ -55,6 +59,8 @@ Private Sub btnDeleteMatrix_Click()
 End Sub
 
 Private Sub btnRunFireModelling_Click()
+'При нажатии на кнопку запускаем моделирование
+    stopModellingFlag = False
     
     On Error GoTo EX
     'Определяем требуемое количество шагов
@@ -66,7 +72,6 @@ Private Sub btnRunFireModelling_Click()
     'проверяем, все ли данные указаны верно
     If timeElapsed > 0 And spd > 0 Then
         'Строим площадь
-'        RunFire GetStepsCount(grain, spd, timeElapsed)
         RunFire timeElapsed, spd
     Else
         MsgBox "Не все данные корректно указаны!", vbCritical

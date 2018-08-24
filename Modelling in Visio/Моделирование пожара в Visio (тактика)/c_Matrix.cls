@@ -24,6 +24,7 @@ Const lowerBurnBound As Double = 7                          'Нижняя граница при 
 Const maximumBurnPower As Double = 100                      'Максимальная мощность горения (после которой увеличение мощности прекращается)
 
 Public firedCells As Collection                             'Коллекция горящих клеток
+Public fireMaxCells As Collection                           'Коллекция горящих на максимум клеток (собственно зона горения)
 Public chargedCells As Collection                           'Коллекция клеток получившех в данном шаге энергию
 Public startedFireCells As Collection                       'Коллекция клеток, которые только загораются, но их мощность еще не максимальна
 Public activeFiredCells As Collection                       'Коллекция активных горящих клеток - тех, что участвуют в расчете - позволяет ускорить расчет в тактической модели, но в физической неприменимо, т.к. на позволяет уитывать гаснущие при тушении клетки
@@ -44,6 +45,7 @@ Public Sub CreateMatrix(ByVal dimX As Long, dimY As Long)
     
     '---Инициируем коллекции клеток
     Set firedCells = New Collection
+    Set fireMaxCells = New Collection
     Set chargedCells = New Collection
     Set startedFireCells = New Collection
     Set activeFiredCells = New Collection
@@ -102,6 +104,8 @@ Public Sub SetFireCell(ByVal x As Long, ByVal y As Long, Optional value As Doubl
         currentgPowerLayer(x, y) = maximumBurnPower
         'добавляем в коллекцию фронта пожара
         fireFrontCells.Add CreateNewCell(x, y), x & ":" & y
+        'добавляем в коллекцию площади пожара
+        fireMaxCells.Add CreateNewCell(x, y), x & ":" & y
     Else
         currentgPowerLayer(x, y) = value
         activeFiredCells.Add CreateNewCell(x, y), x & ":" & y

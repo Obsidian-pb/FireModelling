@@ -16,10 +16,11 @@ Const mmInInch As Double = 25.4
 
 Private matrix As c_Matrix
 
-Public grain As Double          'размер зерна расчета (клетки)
-Private step As Integer         'Счетчик количества шагов
-Public distance As Single       'общая дистанция пройденная при моделирвоании (условная для идеального случая)
-Public time As Single           'общее время прошедшее при моделирвоании (условная для идеального случая)
+Public grain As Double              'размер зерна расчета (клетки)
+Private step As Integer             'Счетчик количества шагов (общий, без моделирвоания и с моделирвоанием)
+Private calcStep As Integer         'Счетчик количества раелизованных (ТОЛЬКО с моделированием) шагов
+Public distance As Single           'общая дистанция пройденная при моделирвоании (условная для идеального случая)
+Public time As Single               'общее время прошедшее при моделирвоании (условная для идеального случая)
 
 
 Public Sub SetMatrix(ByRef m As c_Matrix)
@@ -95,7 +96,7 @@ End Sub
 Public Sub OneRound()
 'один шаг моделирования
 Dim cell As c_Cell
-
+       
     'Очищаем коллекцию клеток только начинающих гореть (разгорающихся)
     Set matrix.startedFireCells = New Collection
     
@@ -169,8 +170,10 @@ Dim cell As c_Cell
         End If
     Next cell
     
-    'Увеличиваем номер шага
-    step = step + 1
+'    Debug.Print matrix.fireMaxCells.Count * grain ^ 2 / 1000000
+
+    'Увеличиваем номер расчитанного шага
+    calcStep = calcStep + 1
 End Sub
 
 
@@ -248,7 +251,9 @@ Dim startFirePower As Double
     'Добавляем клетку в коллекцию клеток периметра, если мощность горения клетки максимальна
     If startFirePower < matrix.GetMaximumBurnPower And matrix.GetFirePower(x, y) = matrix.GetMaximumBurnPower Then
         AddToFrontCells x, y
-            
+        
+        'Добавляем в коллекцию максимально горящих клеток
+        matrix.fireMaxCells.Add CreateNewCell(x, y), x & ":" & y
             
         'Отрисовываем квадрат
         Dim shp As Visio.Shape
@@ -332,8 +337,22 @@ Public Property Get CurrentStep()
 'Текущий шаг расчета
     CurrentStep = step
 End Property
+Public Property Get CalculatedStep()
+'рассчитанный шаг расчета
+    CalculatedStep = calcStep
+End Property
 
-
+Public Sub RizeCurrentStep()
+'Увеличиваем текущий шаг расчета
+    step = step + 1
+    
+'    'Расчитываем пройденный путь и затраченное время
+'    distance = GetWayLen(calcStep, grain)
+''    diffDistance = currentDistance - prevDistance
+'
+'    time = distance / speed
+''    diffTime = currentTime - prevTime
+End Sub
 
 
 
@@ -355,6 +374,25 @@ EX:
      Debug.Print "err"
 End Function
 
+'Private Function GetWayLen(ByVal stepsCount As Integer, ByVal grain As Double) As Single
+''Функция возвращает пройденный путь в метрах
+'    Dim metersInGrain As Double
+'    metersInGrain = grain / 1000
+'
+'    GetWayLen = CalculateWayLen(stepsCount) * metersInGrain
+'End Function
+'
+'Private Function CalculateWayLen(ByVal stepsCount As Integer) As Integer
+''Функция возвращает пройденный путь в клетках
+'    Dim tmpVal As Integer
+'    tmpVal = 0.58 * stepsCount
+'    CalculateWayLen = IIf(tmpVal < 0, 0, tmpVal)
+'End Function
+'
+'Private Function IsEven(ByVal number As Integer) As Boolean
+''Проверяем, четное ли число
+'    IsEven = Int(number / 2) = number / 2
+'End Function
 
 '-----------------------------Разное-------------------------------------------
 Public Function GetFiredCellsCount() As Long
@@ -364,6 +402,10 @@ Public Function GetActiveCellsCount() As Long
     GetActiveCellsCount = matrix.activeFiredCells.Count
 End Function
 
+Public Function GetFireSquare() As Single
+'Возвращаем площадь пожара
+    GetFireSquare = matrix.fireMaxCells.Count * grain ^ 2 / 1000000
+End Function
 
 
 
