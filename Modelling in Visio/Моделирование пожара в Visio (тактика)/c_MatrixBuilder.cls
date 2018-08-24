@@ -14,6 +14,8 @@ Option Explicit
 Private grain As Integer        'Размер зерна в мм
 Const mmInInch As Double = 25.4
 
+Private form As SettingsForm
+
 Public maskBuilder As c_MaskBuilder
 
 Public matrix As Variant
@@ -30,6 +32,11 @@ Public matrix As Variant
 '    End If
 'End Function
 
+Public Sub SetForm(ByRef frm As UserForm)
+'Указываем ссылку на внешнюю форму в которую будет выводиться отчет о процессе запекания формы
+    Set form = frm
+End Sub
+
 
 Public Function NewMatrix(ByVal grainVal As Integer, Optional ByRef rect As c_Rect) As Variant()
 'Функция создает и возвращает новую матрицу объекта для расчета
@@ -44,7 +51,7 @@ Dim arr() As Integer
     yCount = ActivePage.PageSheet.Cells("PageHeight").Result(visMillimeters) / grain
 
     ReDim matrix(xCount, yCount)
-
+       
     'Определяем конфигурацию матрицы (стены, зоны горения и т.д.)
     Set maskBuilder = New c_MaskBuilder
     '---Создаем маску
@@ -76,6 +83,8 @@ Dim startRectSizeHalf As Long
     'Рекурсивно анализируем схему
     '---определяем размер стартового квадрата для поиска стен
         startRectSizeHalf = GetMaximumRectSize / 2   'Половина потому что в самом начале и радиус и количество зерен равны
+        'Задаем для внешней формы значение размера матрицы
+        form.SetMatrixSize (startRectSizeHalf * 2) ^ 2
     '---Запускаем рекурсивный анализ
         CheckRect startRectSizeHalf, startRectSizeHalf, startRectSizeHalf
 End Sub
@@ -105,15 +114,16 @@ Const radiussModificator As Double = 1.4142       'Модификатор радиуса - нужен, 
 '1 Проверяем утверждение, что в радиусе нет стен
     '---Если стен нет, оставляем для всей клетки 0
         If IsOpenSpace(x, y, radiuss * radiussModificator * grain) Then
-            
+            form.AddCheckedSize (radiuss * 2) ^ 2
+
 '            Dim shp As Visio.Shape
-'            Set shp = Application.ActivePage.DrawRectangle((X - radiuss) * grain / mmInInch, (Y - radiuss) * grain / mmInInch, _
-'                    (X + radiuss) * grain / mmInInch, (Y + radiuss) * grain / mmInInch)
+'            Set shp = Application.ActivePage.DrawRectangle((x - radiuss) * grain / mmInInch, (y - radiuss) * grain / mmInInch, _
+'                    (x + radiuss) * grain / mmInInch, (y + radiuss) * grain / mmInInch)
 '            shp.CellsSRC(visSectionObject, visRowLayerMem, visLayerMember).FormulaForceU = GetLayerNumber("Пространство")
 '            shp.CellsSRC(visSectionObject, visRowLine, visLineWeight).FormulaU = "0.1 pt"
 '
-'            DoEvents
-            
+            DoEvents
+
             Exit Sub
         End If
         
@@ -123,6 +133,7 @@ Const radiussModificator As Double = 1.4142       'Модификатор радиуса - нужен, 
         If IsTotalWall(x, y, radiuss * radiussModificator * grain) Then
         'Если при этом в радиусе нет открытого пространства, ставим для всех входящих точек значение стены (1)
             SetToAllCells x, y, radiuss, csWall
+            form.AddCheckedSize (radiuss * 2) ^ 2
             
 '                Dim shp As Visio.Shape
 '                Set shp = Application.ActivePage.DrawRectangle((X - radiuss) * grain / mmInInch, (Y - radiuss) * grain / mmInInch, _
@@ -130,9 +141,11 @@ Const radiussModificator As Double = 1.4142       'Модификатор радиуса - нужен, 
 '                shp.CellsSRC(visSectionObject, visRowLayerMem, visLayerMember).FormulaForceU = GetLayerNumber("Пространство")
 '                shp.CellsSRC(visSectionObject, visRowLine, visLineWeight).FormulaU = "0.1 pt"
 '
-'                DoEvents
+                DoEvents
         Else
             If radiuss = 1 Then
+                form.AddCheckedSize 1
+                
                 'Проверяем все входящие клетки, т.к. при радиусе = 1 в клетку входит четыре атомарных
 '                radiussHalf = 0.5
 '                '1 - вверх влево

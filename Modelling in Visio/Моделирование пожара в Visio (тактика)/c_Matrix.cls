@@ -91,6 +91,9 @@ End Sub
 Public Sub SetFireCell(ByVal x As Long, ByVal y As Long, Optional value As Double)
 'Создаем новую точку горения
     
+    'Если указанная точка находится за пределами матрицы - выходим из процедуры
+    If x < 0 Or y < 0 Or x > DimensionX Or y > DimensionY Then Exit Sub
+    
     'Если указанная точка является стеной - выходим из процедуры
     If openSpaceLayer(x, y) = CellState.csWall Then Exit Sub
     
@@ -101,6 +104,7 @@ Public Sub SetFireCell(ByVal x As Long, ByVal y As Long, Optional value As Doubl
         fireFrontCells.Add CreateNewCell(x, y), x & ":" & y
     Else
         currentgPowerLayer(x, y) = value
+        activeFiredCells.Add CreateNewCell(x, y), x & ":" & y
     End If
     
     'Добавляем запись о горящей точке в коллекцию

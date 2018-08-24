@@ -28,6 +28,7 @@ Dim matrixBuilder As c_MatrixBuilder
     
     'Запекаем матрицу открытых пространств
     Set matrixBuilder = New c_MatrixBuilder
+    matrixBuilder.SetForm SettingsForm
     matrix = matrixBuilder.NewMatrix(grain)
 
     'Активируем объект матрицы
@@ -42,11 +43,14 @@ Dim matrixBuilder As c_MatrixBuilder
     'Указываем модельеру значение зерна
     fireModeller.grain = grain
 
-    'Ищем фигуры очага и по их координатам сутанавливаем точки начала пожара
+    'Ищем фигуры очага и по их координатам устанавливаем точки начала пожара
     GetFirePoints
 
     '---Печатаем сколько потребовалось времени
 '    MsgBox "Матрица запечена за " & tmr.GetElapsedTime & " сек." & Chr(10) & Chr(13) & "Зерно " & grain & "мм."
+    
+    SettingsForm.lblMatrixIsBaked.Caption = "Матрица запечена за " & tmr.GetElapsedTime & " сек."
+    SettingsForm.lblMatrixIsBaked.ForeColor = vbGreen
     
     Debug.Print "Матрица запечена..."
     tmr.PrintElapsedTime
@@ -56,7 +60,8 @@ Dim matrixBuilder As c_MatrixBuilder
 End Sub
 
 
-Public Sub RunFire(ByVal stepCount As Integer)
+Public Sub RunFire(ByVal timeElapsed As Single, ByVal speed As Single)
+'Моделируем площадь горения до тех пор, пока расчетный путь пройденный огнем не станет больше distance + пройденный ранее (хранится в модельере)
     
     'Включаем обработчик ошибок - для предупреждения об отсутствии запеченной матрицы
     On Error GoTo EX
@@ -67,23 +72,51 @@ Public Sub RunFire(ByVal stepCount As Integer)
     Set tmr2 = New c_Timer
     
     Dim i As Integer
-    Dim j As Integer
-    For i = 0 To stepCount
+    i = 1
+    
+    '---Определяем предельное значение пройденного пути (путь данного этапа + путь пройденный ранее)
+    Dim boundDistance As Single             'Предельное расстояние, согласно расчета
+    Dim currentDistance As Single           'Текущее пройденное расстояние
+    Dim prevDistance As Single              'Расстояние пройденное на предыдущем этапе расчета
+    Dim diffDistance As Single              'Расстяоине пройденное в данном этапе расчета
+    Dim currentTime As Single               'Текущее время с начала расчета
+    Dim prevTime As Single                  'Время за которое проейден предыдущий этап расчета
+    Dim diffTime As Single                  'Время за которое проейден текущий этап расчета
+    
+    
+    prevDistance = fireModeller.distance
+    boundDistance = timeElapsed * speed + prevDistance
+    
+    prevTime = fireModeller.time
+    
+    Do While currentDistance < boundDistance
         fireModeller.OneRound
             
         'Объединяем добавленные точки в одну фигуру
         MakeShape
-            
-
-
+        
+        currentDistance = GetWayLen(fireModeller.CurrentStep, grain)
+        diffDistance = currentDistance - prevDistance
+        
+        currentTime = currentDistance / speed
+        diffTime = currentTime - prevTime
+        
+        
+        On Error Resume Next
         '---Печатаем сколько потребовалось времени
-        SettingsForm.lblCurrentStatus.Caption = GetStatusString(i, grain, SettingsForm.txtSpeed)
-        Debug.Print i & ") горит " & fireModeller.GetFiredCellsCount & ", активно " & fireModeller.GetActiveCellsCount & ". Прошло " & tmr2.GetElapsedTime & "с."
-'        tmr.PrintElapsedTime
+        SettingsForm.lblCurrentStatus.Caption = "Шаг: " & i & "(" & fireModeller.CurrentStep & "), " & _
+                                                " пройденный путь: " & Round(diffDistance, 2) & "(" & Round(currentDistance, 2) & ")м.," & _
+                                                " время: " & Round(diffTime, 2) & "(" & Round(currentTime, 2) & ")мин"
+        On Error GoTo EX
+        
+        i = i + 1
         
         Application.ActiveWindow.DeselectAll
         DoEvents
-    Next i
+    Loop
+    
+    fireModeller.distance = currentDistance
+    fireModeller.time = currentTime
         
     Debug.Print "Всего затрачено " & tmr2.GetElapsedTime & "с."
     
@@ -95,10 +128,55 @@ EX:
     MsgBox "Матрица не запечена!", vbCritical
 End Sub
 
+'Public Sub RunFire(ByVal stepCount As Integer)
+'
+'    'Включаем обработчик ошибок - для предупреждения об отсутствии запеченной матрицы
+'    On Error GoTo EX
+'
+'    '---Подключаем таймер
+'    Dim tmr As c_Timer, tmr2 As c_Timer
+'    Set tmr = New c_Timer
+'    Set tmr2 = New c_Timer
+'
+'    Dim i As Integer
+'    Dim j As Integer
+'
+'
+'
+'
+'    For i = 0 To stepCount
+''        SettingsForm.lblCurrentStatus.Caption = GetStatusString(i, grain, SettingsForm.txtSpeed)
+'
+'        fireModeller.OneRound
+'
+'        'Объединяем добавленные точки в одну фигуру
+'        MakeShape
+'
+'
+'        On Error Resume Next
+'        '---Печатаем сколько потребовалось времени
+'        SettingsForm.lblCurrentStatus.Caption = GetStatusString(i, grain, SettingsForm.txtSpeed)
+'        On Error GoTo EX
+''        Debug.Print i & ") горит " & fireModeller.GetFiredCellsCount & ", активно " & fireModeller.GetActiveCellsCount & ". Прошло " & tmr2.GetElapsedTime & "с."
+''        tmr.PrintElapsedTime
+'
+'        Application.ActiveWindow.DeselectAll
+'        DoEvents
+'    Next i
+'
+'    Debug.Print "Всего затрачено " & tmr2.GetElapsedTime & "с."
+'
+'    Set tmr = Nothing
+'    Set tmr2 = Nothing
+'
+'Exit Sub
+'EX:
+'    MsgBox "Матрица не запечена!", vbCritical
+'End Sub
+
 ' уничтожение матрицы (очищаем память)
 Public Sub DestroyMatrix()
     Set fireModeller = Nothing
-    MsgBox "Матрица удалена"
 End Sub
 
 
@@ -138,7 +216,8 @@ Dim yIndex As Integer
     xIndex = Int(xPos / grain)
     yIndex = Int(yPos / grain)
     
-    fireModeller.SetFireCell xIndex, yIndex
+'    fireModeller.SetFireCell xIndex, yIndex
+    fireModeller.SetStartFireCell xIndex, yIndex
 
 End Sub
 
@@ -163,8 +242,11 @@ Public Function GetStepsCount(ByVal grain As Integer, ByVal speed As Single, ByV
     
     '2 определить собственно сколько нужно шагов для достижения
     Dim tmpVal As Integer
-'    tmpVal = (firePathLen + 1.669) / 0.5632
-    tmpVal = (firePathLen + 1.669) / 0.58
+'    tmpVal = (firePathLen + 1.669) / 0.58
+    tmpVal = firePathLen / 0.58
+'    If fireModeller.CurrentStep > 3 Then
+'        tmpVal = tmpVal - 1
+'    End If
     GetStepsCount = IIf(tmpVal < 0, 0, tmpVal)
     
 End Function
@@ -173,27 +255,38 @@ Public Function GetWayLen(ByVal stepsCount As Integer, ByVal grain As Double) As
 'Функция возвращает пройденный путь в метрах
     Dim metersInGrain As Double
     metersInGrain = grain / 1000
-    
+
     GetWayLen = CalculateWayLen(stepsCount) * metersInGrain
 End Function
 
 Public Function CalculateWayLen(ByVal stepsCount As Integer) As Integer
 'Функция возвращает пройденный путь в клетках
     Dim tmpVal As Integer
-    tmpVal = 0.58 * stepsCount - 1.669
+'    tmpVal = 0.58 * stepsCount - 1.669
+    tmpVal = 0.58 * stepsCount
     CalculateWayLen = IIf(tmpVal < 0, 0, tmpVal)
 End Function
 
-Public Function GetStatusString(ByVal step As Integer, ByVal grain As Integer, ByVal speed As Single) As String
-'Функция возвращает статусную строку
-Dim wayLen As Single
-Dim timeElapsed As Single
+'Public Function GetStatusString(ByVal step As Integer, ByVal grain As Integer, ByVal speed As Single) As String
+''Функция возвращает статусную строку
+'Dim wayLen As Single
+'Dim timeElapsed As Single
+'Dim wayLenTotal As Single
+'Dim timeElapsedTotal As Single
+'
+'    wayLen = GetWayLen(step, grain)
+'    timeElapsed = Round(wayLen / speed, 2)
+'
+'    wayLenTotal = GetWayLen(fireModeller.CurrentStep - 1, grain)
+'    timeElapsedTotal = Round(wayLenTotal / speed, 2)
+'
+'    GetStatusString = "Шаг " & fireModeller.CurrentStep & ", " & _
+'                    "времени: " & timeElapsed & "(" & timeElapsedTotal & ") мин., " & _
+'                    "путь: " & wayLen & "(" & wayLenTotal & ")" & _
+'                    "м, Площадь пожара: " & Round(Application.ActiveWindow.Selection(1).AreaIU * 0.00064516, 1) & "м.кв."
+'End Function
 
-    wayLen = GetWayLen(step, grain)
-    timeElapsed = wayLen / speed
-    
-    GetStatusString = "Шаг " & step & ", времени: " & timeElapsed & "мин., " & _
-                    "путь: " & wayLen & _
-                    "м, Площадь пожара: " & Round(Application.ActiveWindow.Selection(1).AreaIU * 0.00064516, 1) & "м.кв."
+Public Function IsMatrixBacked() As Boolean
+'Возвращает Истина, если матрица уже запечена и Ложь, если нет
+    IsMatrixBacked = Not fireModeller Is Nothing
 End Function
-

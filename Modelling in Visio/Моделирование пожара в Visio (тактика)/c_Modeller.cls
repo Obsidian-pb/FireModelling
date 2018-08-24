@@ -16,7 +16,10 @@ Const mmInInch As Double = 25.4
 
 Private matrix As c_Matrix
 
-Public grain As Double
+Public grain As Double          'размер зерна расчета (клетки)
+Private step As Integer         'Счетчик количества шагов
+Public distance As Single       'общая дистанция пройденная при моделирвоании (условная для идеального случая)
+Public time As Single           'общее время прошедшее при моделирвоании (условная для идеального случая)
 
 
 Public Sub SetMatrix(ByRef m As c_Matrix)
@@ -27,25 +30,63 @@ End Sub
 Public Sub SetFireCell(ByVal x As Long, ByVal y As Long, Optional value As Double)
 'Создаем новую точку горения
     matrix.SetFireCell x, y, value
-    'Добавляем запись о горящей точке в коллекцию активных клеток и клеток периметра
+    
+    'Добавляем запись о горящей точке в коллекцию активных клеток
     AddToActiveCells x, y
     
     'Insert Firepoint as Visio Shape
         Dim shp As Visio.Shape
         Set shp = Application.ActivePage.DrawRectangle(x * grain / mmInInch, y * grain / mmInInch, _
                 (x + 1) * grain / mmInInch, (y + 1) * grain / mmInInch)
-'        shp.CellsSRC(visSectionObject, visRowLayerMem, visLayerMember).FormulaForceU = GetLayerNumber("Огонь")
         shp.CellsSRC(visSectionObject, visRowLayerMem, visLayerMember).FormulaForceU = GetLayerNumber("Fire")
         shp.Cells("LinePattern").FormulaU = "0"
         shp.Cells("FillForegnd").FormulaU = "2"
-'        shp.Cells("LinePattern").FormulaU = "1"
-'        shp.Cells("LineColor").FormulaU = "2"
-'        shp.Cells("FillPattern").FormulaU = "0"
-        
-        
 End Sub
 
+Public Sub SetStartFireCell(ByVal x As Long, ByVal y As Long, Optional value As Double)
+'Создаем стартовую точку горения
+    matrix.SetFireCell x, y, value
+    'добавляем точки распространения горения
+    matrix.SetFireCell x - 2, y - 2, 3.4
+    matrix.SetFireCell x - 1, y - 2, 9.61
+    matrix.SetFireCell x, y - 2, 13.59
+    matrix.SetFireCell x + 1, y - 2, 9.61
+    matrix.SetFireCell x + 2, y - 2, 3.4
 
+    matrix.SetFireCell x - 2, y - 1, 9.61
+    matrix.SetFireCell x - 1, y - 1, 43.58
+    matrix.SetFireCell x, y - 1, 61.64
+    matrix.SetFireCell x + 1, y - 1, 43.58
+    matrix.SetFireCell x + 2, y - 1, 9.61
+
+    matrix.SetFireCell x - 2, y, 13.59
+    matrix.SetFireCell x - 1, y, 61.64
+    matrix.SetFireCell x + 1, y, 61.64
+    matrix.SetFireCell x + 2, y, 13.59
+
+    matrix.SetFireCell x - 2, y + 1, 9.61
+    matrix.SetFireCell x - 1, y + 1, 43.58
+    matrix.SetFireCell x, y + 1, 61.64
+    matrix.SetFireCell x + 1, y + 1, 43.58
+    matrix.SetFireCell x + 2, y + 1, 9.61
+
+    matrix.SetFireCell x - 2, y + 2, 3.4
+    matrix.SetFireCell x - 1, y + 2, 9.61
+    matrix.SetFireCell x, y + 2, 13.59
+    matrix.SetFireCell x + 1, y + 2, 9.61
+    matrix.SetFireCell x + 2, y + 2, 3.4
+    
+    'Добавляем запись о горящей точке в коллекцию активных клеток
+    AddToActiveCells x, y
+    
+    'Insert Firepoint as Visio Shape
+        Dim shp As Visio.Shape
+        Set shp = Application.ActivePage.DrawRectangle(x * grain / mmInInch, y * grain / mmInInch, _
+                (x + 1) * grain / mmInInch, (y + 1) * grain / mmInInch)
+        shp.CellsSRC(visSectionObject, visRowLayerMem, visLayerMember).FormulaForceU = GetLayerNumber("Fire")
+        shp.Cells("LinePattern").FormulaU = "0"
+        shp.Cells("FillForegnd").FormulaU = "2"
+End Sub
 
 
 
@@ -88,7 +129,6 @@ Dim cell As c_Cell
     Next cell
 
     
-    '--------------------ПЕРЕДЕЛАТЬ ПОЛНОСТЬЮ с использованием демонов
     'Спрямляем горение у стен (проверяем все клетки, что получили энергию, но еще не горят полностью))
     Dim shp As Visio.Shape
     Dim cornerDemon As c_CornerDemon
@@ -129,6 +169,8 @@ Dim cell As c_Cell
         End If
     Next cell
     
+    'Увеличиваем номер шага
+    step = step + 1
 End Sub
 
 
@@ -212,13 +254,9 @@ Dim startFirePower As Double
         Dim shp As Visio.Shape
         Set shp = Application.ActivePage.DrawRectangle(x * grain / mmInInch, y * grain / mmInInch, _
                 (x + 1) * grain / mmInInch, (y + 1) * grain / mmInInch)
-'        shp.CellsSRC(visSectionObject, visRowLayerMem, visLayerMember).FormulaForceU = GetLayerNumber("Огонь")
         shp.CellsSRC(visSectionObject, visRowLayerMem, visLayerMember).FormulaForceU = GetLayerNumber("Fire")
         shp.Cells("LinePattern").FormulaU = "0"
         shp.Cells("FillForegnd").FormulaU = "2"
-'        shp.Cells("LinePattern").FormulaU = "1"
-'        shp.Cells("LineColor").FormulaU = "2"
-'        shp.Cells("FillPattern").FormulaU = "0"
 
 '            DoEvents
     End If
@@ -289,6 +327,12 @@ End Sub
 
 
 
+'-----------------------------Свойства---------------------------------------------
+Public Property Get CurrentStep()
+'Текущий шаг расчета
+    CurrentStep = step
+End Property
+
 
 
 
@@ -323,45 +367,42 @@ End Function
 
 
 
-
-
-
-'-------Тестовая процедура
-Public Sub DrawActiveCells()
-'Отрисовываем квадрат
-Dim cell As c_Cell
-    
-    For Each cell In matrix.activeFiredCells
-        Dim shp As Visio.Shape
-        Set shp = Application.ActivePage.DrawRectangle(cell.x * grain / mmInInch, cell.y * grain / mmInInch, _
-                (cell.x + 1) * grain / mmInInch, (cell.y + 1) * grain / mmInInch)
-        shp.CellsSRC(visSectionObject, visRowLayerMem, visLayerMember).FormulaForceU = GetLayerNumber("Огонь")
-        shp.Cells("LinePattern").FormulaU = "0"
-        shp.Cells("FillForegnd").FormulaU = "2"
-    Next cell
-End Sub
-
-Public Sub DrawFrontCells()
-'Отрисовываем квадрат
-Dim cell As c_Cell
-    
-    For Each cell In matrix.fireFrontCells
-        Dim shp As Visio.Shape
-        Set shp = Application.ActivePage.DrawRectangle(cell.x * grain / mmInInch, cell.y * grain / mmInInch, _
-                (cell.x + 1) * grain / mmInInch, (cell.y + 1) * grain / mmInInch)
-        shp.CellsSRC(visSectionObject, visRowLayerMem, visLayerMember).FormulaForceU = GetLayerNumber("Огонь")
-        shp.Cells("LinePattern").FormulaU = "0"
-        shp.Cells("FillForegnd").FormulaU = "2"
-    Next cell
-End Sub
-
-Public Sub RemoveActive()
-Dim cell As c_Cell
-
-    For Each cell In matrix.activeFiredCells
-        If matrix.IsInner(cell.x, cell.y) Then
-            RemoveFromActiveCells cell.x, cell.y
-            RemoveFromFrontCells cell.x, cell.y
-        End If
-    Next cell
-End Sub
+''-------Тестовая процедура
+'Public Sub DrawActiveCells()
+''Отрисовываем квадрат
+'Dim cell As c_Cell
+'
+'    For Each cell In matrix.activeFiredCells
+'        Dim shp As Visio.Shape
+'        Set shp = Application.ActivePage.DrawRectangle(cell.x * grain / mmInInch, cell.y * grain / mmInInch, _
+'                (cell.x + 1) * grain / mmInInch, (cell.y + 1) * grain / mmInInch)
+'        shp.CellsSRC(visSectionObject, visRowLayerMem, visLayerMember).FormulaForceU = GetLayerNumber("Огонь")
+'        shp.Cells("LinePattern").FormulaU = "0"
+'        shp.Cells("FillForegnd").FormulaU = "2"
+'    Next cell
+'End Sub
+'
+'Public Sub DrawFrontCells()
+''Отрисовываем квадрат
+'Dim cell As c_Cell
+'
+'    For Each cell In matrix.fireFrontCells
+'        Dim shp As Visio.Shape
+'        Set shp = Application.ActivePage.DrawRectangle(cell.x * grain / mmInInch, cell.y * grain / mmInInch, _
+'                (cell.x + 1) * grain / mmInInch, (cell.y + 1) * grain / mmInInch)
+'        shp.CellsSRC(visSectionObject, visRowLayerMem, visLayerMember).FormulaForceU = GetLayerNumber("Огонь")
+'        shp.Cells("LinePattern").FormulaU = "0"
+'        shp.Cells("FillForegnd").FormulaU = "2"
+'    Next cell
+'End Sub
+'
+'Public Sub RemoveActive()
+'Dim cell As c_Cell
+'
+'    For Each cell In matrix.activeFiredCells
+'        If matrix.IsInner(cell.x, cell.y) Then
+'            RemoveFromActiveCells cell.x, cell.y
+'            RemoveFromFrontCells cell.x, cell.y
+'        End If
+'    Next cell
+'End Sub
