@@ -62,6 +62,9 @@ Dim tmpColl As Collection
             'Создаем новый блок и передаем ему временную коллекцию клеток фронта
             Set extBlock = New c_ExtinguishingBlock
             Set extBlock.fireFrontCells = tmpColl
+            AddCellsToCollection extBlock.extinguishingCells, tmpColl
+            '---Устанавливаем глубину тушения
+                extBlock.fireWay = 5000     'Для ручных стволов
             
             'Добавляем созданный блок в коллекцию блоков модели площади тушения
 '            extSquare.extinguishingBlocks.Add extBlock
@@ -101,6 +104,17 @@ Private Sub AddCellToCollection(ByRef thisColl As Collection, ByVal cell As c_Ce
     matrix(cell.x, cell.y) = CellType.fireFrontInBlock
 End Sub
 
+Private Sub AddCellsToCollection(ByRef col1 As Collection, ByRef col2 As Collection)
+'Добавляем все клетки из коллекции 2 в коллекцию 1
+Dim cell As c_Cell
+
+    For Each cell In col2
+        col1.Add cell, cell.x & ":" & cell.y
+    Next cell
+End Sub
+
+
+
 
 
 Private Function NextCell(ByRef cell As c_Cell, ByVal dir As Directions) As c_Cell
@@ -135,3 +149,6 @@ Dim cell As c_Cell
     Set NewCell = cell
 End Function
 
+Public Property Get GetMatrix() As Variant
+    GetMatrix = matrix
+End Property

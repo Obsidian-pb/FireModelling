@@ -7,18 +7,22 @@ Attribute VB_Name = "BuildExtObjects"
 
 
 
-Public Sub OneStep()
+Public Sub BuildExtSquare()
     
 Dim extSquare As c_ExtinguishingSquare
 Dim frontDemonImpl As c_FrontDemon
+Dim extinguishingSquareDemon As c_ExtinguishSquareDemon
 
     Set extSquare = New c_ExtinguishingSquare
     Set frontDemonImpl = New c_FrontDemon
+    Set extinguishingSquareDemon = New c_ExtinguishSquareDemon
     
     frontDemonImpl.CreateMatrix 100, 100
     frontDemonImpl.RunDemon extSquare, GetCellsCollection
-    
-    
+'    extinguishingSquareDemon.SetMatrix frontDemonImpl.GetMatrix
+    extinguishingSquareDemon.CreateMatrix 100, 100
+    extinguishingSquareDemon.SetGrain = 200
+    extinguishingSquareDemon.RunDemon extSquare
     
     
     

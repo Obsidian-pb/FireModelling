@@ -31,5 +31,5 @@ Public Sub AddExtinguishingBlock(ByRef block As c_ExtinguishingBlock)
 
     block.LetID = extinguishingBlocks.Count
     extinguishingBlocks.Add block
-    
+
 End Sub
