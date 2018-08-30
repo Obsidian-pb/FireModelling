@@ -15,6 +15,7 @@ Const orto As Double = 0.14142135623731                     ' Коэффициент мощнос
 Const mmInInch As Double = 25.4
 
 Private matrix As c_Matrix
+Private extSquare As c_ExtinguishingSquare                  'Объект лощади тушения
 
 Public grain As Double              'размер зерна расчета (клетки)
 Private step As Integer             'Счетчик количества шагов (общий, без моделирвоания и с моделирвоанием)
@@ -103,11 +104,7 @@ Dim cell As c_Cell
     'Очищаем коллекцию ключевых точек
     Set matrix.keyCornerCells = New Collection
 
-    'Атакуем всем горящими клетками (неоптимально, поэтому закоменчено, оставлено для сравнения)
-'    For Each cell In matrix.firedCells
-'        Attack cell.x, cell.y
-'    Next cell
-    'Атакуем всем активными клетками (не внутренними)
+    'Атакуем всеми активными клетками (не внутренними)
     For Each cell In matrix.activeFiredCells
         Attack cell.x, cell.y
     Next cell
@@ -169,6 +166,9 @@ Dim cell As c_Cell
             RemoveFromFrontCells cell.x, cell.y
         End If
     Next cell
+    
+    'Рассчитываем площади тушения
+    FireSquareCalculate
     
 '    Debug.Print matrix.fireMaxCells.Count * grain ^ 2 / 1000000
 
@@ -407,6 +407,45 @@ Public Function GetFireSquare() As Single
     GetFireSquare = matrix.fireMaxCells.Count * grain ^ 2 / 1000000
 End Function
 
+
+'----------------------------Расчет площадей тушения--------------------------
+Public Sub FireSquareCalculate()
+'Процедура получения блоков площади тушения
+'Dim extSquare As c_ExtinguishingSquare
+Dim frontDemonImpl As c_FrontDemon
+Dim extinguishingSquareDemon As c_ExtinguishSquareDemon
+
+    Set extSquare = New c_ExtinguishingSquare
+    Set frontDemonImpl = New c_FrontDemon
+    Set extinguishingSquareDemon = New c_ExtinguishSquareDemon
+    
+    frontDemonImpl.CreateMatrix matrix.DimensionX, matrix.DimensionY
+    frontDemonImpl.RunDemon extSquare, matrix.fireFrontCells
+    extinguishingSquareDemon.CreateMatrix matrix
+    extinguishingSquareDemon.SetGrain = grain
+    extinguishingSquareDemon.RunDemon extSquare
+    
+    
+    
+    
+End Sub
+
+Public Sub DrawExtSquareByDemon()
+'Команда демону отрисовать площадь тушения
+'Dim frontDemonImpl As c_FrontDemon
+Dim extinguishingSquareDemon As c_ExtinguishSquareDemon
+
+    
+'    Set extSquare = New c_ExtinguishingSquare
+'    Set frontDemonImpl = New c_FrontDemon
+    Set extinguishingSquareDemon = New c_ExtinguishSquareDemon
+    
+'    frontDemonImpl.CreateMatrix matrix.DimensionX, matrix.DimensionY
+'    frontDemonImpl.RunDemon extSquare, matrix.fireFrontCells
+'    extinguishingSquareDemon.CreateMatrix matrix
+    extinguishingSquareDemon.SetGrain = grain
+    extinguishingSquareDemon.DrawFireSquare extSquare
+End Sub
 
 
 ''-------Тестовая процедура

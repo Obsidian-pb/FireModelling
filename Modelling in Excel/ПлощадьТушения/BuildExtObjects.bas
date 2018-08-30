@@ -19,7 +19,6 @@ Dim extinguishingSquareDemon As c_ExtinguishSquareDemon
     
     frontDemonImpl.CreateMatrix 100, 100
     frontDemonImpl.RunDemon extSquare, GetCellsCollection
-'    extinguishingSquareDemon.SetMatrix frontDemonImpl.GetMatrix
     extinguishingSquareDemon.CreateMatrix 100, 100
     extinguishingSquareDemon.SetGrain = 200
     extinguishingSquareDemon.RunDemon extSquare

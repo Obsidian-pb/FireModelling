@@ -36,7 +36,7 @@ Dim cs As Double
 Dim sn As Double
 Dim i As Integer
 Dim j As Integer
-Dim cellType As Byte
+Dim CellType As Byte
     
     'ƒобавл€ем стартовую клетку
 '    AddToCellCollection startX, startY
@@ -47,11 +47,11 @@ Dim cellType As Byte
     
     'ѕоследовательно провер€ем все клеткии линии, на предмет того, €вл€ютс€ они пустой клеткой, гор€щей клеткой или же клеткой стены
     i = 0
-    Do While cellType = 0
+    Do While CellType = 0
         x = startX + Int(cs * i)
         y = startY + Int(sn * i)
         
-        cellType = GetKindOfCell(x, y)
+        CellType = GetKindOfCell(x, y)
         
         i = i + 1
         If i > 100 Then Exit Do
@@ -66,7 +66,7 @@ Dim cellType As Byte
 '    End If
 
     '¬носим все клетки в коллекцию клеток дл€ последующего закрашивани€
-    If cellType = 1 Then
+    If CellType = 1 Then
         For j = 0 To i - 2
             x = startX + Int(cs * j)
             y = startY + Int(sn * j)

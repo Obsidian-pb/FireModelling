@@ -93,6 +93,7 @@ Public Sub RunFire(ByVal timeElapsed As Single, ByVal speed As Single)
     prevTime = fireModeller.time
     
     Do While diffTime < timeElapsed
+        ClearLayer "ExtSquare"
         'Проверяем, сколько времени длится расчет, если меньше 10 минут, то расчитываем, только каждый второй шаг, т.е., с половиной скорости
         If currentTime < 10 Then
             'При вермени менее 10 минут считаем рост только каждый второй шаг
@@ -119,8 +120,7 @@ Public Sub RunFire(ByVal timeElapsed As Single, ByVal speed As Single)
         
         currentTime = currentDistance / speed
         diffTime = currentTime - prevTime
-        
-        
+               
         On Error Resume Next
         '---Печатаем сколько потребовалось времени
         SettingsForm.lblCurrentStatus.Caption = "Шаг: " & i & "(" & fireModeller.CurrentStep & "), " & _
@@ -153,56 +153,23 @@ EX:
     MsgBox "Матрица не запечена!", vbCritical
 End Sub
 
-'Public Sub RunFire(ByVal stepCount As Integer)
-'
-'    'Включаем обработчик ошибок - для предупреждения об отсутствии запеченной матрицы
-'    On Error GoTo EX
-'
-'    '---Подключаем таймер
-'    Dim tmr As c_Timer, tmr2 As c_Timer
-'    Set tmr = New c_Timer
-'    Set tmr2 = New c_Timer
-'
-'    Dim i As Integer
-'    Dim j As Integer
-'
-'
-'
-'
-'    For i = 0 To stepCount
-''        SettingsForm.lblCurrentStatus.Caption = GetStatusString(i, grain, SettingsForm.txtSpeed)
-'
-'        fireModeller.OneRound
-'
-'        'Объединяем добавленные точки в одну фигуру
-'        MakeShape
-'
-'
-'        On Error Resume Next
-'        '---Печатаем сколько потребовалось времени
-'        SettingsForm.lblCurrentStatus.Caption = GetStatusString(i, grain, SettingsForm.txtSpeed)
-'        On Error GoTo EX
-''        Debug.Print i & ") горит " & fireModeller.GetFiredCellsCount & ", активно " & fireModeller.GetActiveCellsCount & ". Прошло " & tmr2.GetElapsedTime & "с."
-''        tmr.PrintElapsedTime
-'
-'        Application.ActiveWindow.DeselectAll
-'        DoEvents
-'    Next i
-'
-'    Debug.Print "Всего затрачено " & tmr2.GetElapsedTime & "с."
-'
-'    Set tmr = Nothing
-'    Set tmr2 = Nothing
-'
-'Exit Sub
-'EX:
-'    MsgBox "Матрица не запечена!", vbCritical
-'End Sub
-
 ' уничтожение матрицы (очищаем память)
 Public Sub DestroyMatrix()
     Set fireModeller = Nothing
 End Sub
+
+Public Sub DrawExtSquare()
+'Внешняя команда на отрисовку площади тушения
+    fireModeller.DrawExtSquareByDemon
+End Sub
+
+
+
+
+
+
+
+
 
 
 
@@ -241,7 +208,6 @@ Dim yIndex As Integer
     xIndex = Int(xPos / grain)
     yIndex = Int(yPos / grain)
     
-'    fireModeller.SetFireCell xIndex, yIndex
     fireModeller.SetStartFireCell xIndex, yIndex
 
 End Sub
@@ -252,10 +218,11 @@ Private Sub MakeShape()
 
     Dim vsoSelection As Visio.Selection
     Set vsoSelection = Application.ActiveWindow.Page.CreateSelection(visSelTypeByLayer, visSelModeSkipSuper, "Fire")
-    
+
     vsoSelection.Union
-    
+
     Application.ActiveWindow.Selection(1).CellsSRC(visSectionObject, visRowLayerMem, visLayerMember).FormulaForceU = GetLayerNumber("Fire")
+'    Application.ActiveWindow.Selection(1).SendToBack
 End Sub
 
 Public Function GetStepsCount(ByVal grain As Integer, ByVal speed As Single, ByVal elapsedTime As Single) As Integer
@@ -290,24 +257,6 @@ End Function
 
 
 
-'Public Function GetStatusString(ByVal step As Integer, ByVal grain As Integer, ByVal speed As Single) As String
-''Функция возвращает статусную строку
-'Dim wayLen As Single
-'Dim timeElapsed As Single
-'Dim wayLenTotal As Single
-'Dim timeElapsedTotal As Single
-'
-'    wayLen = GetWayLen(step, grain)
-'    timeElapsed = Round(wayLen / speed, 2)
-'
-'    wayLenTotal = GetWayLen(fireModeller.CurrentStep - 1, grain)
-'    timeElapsedTotal = Round(wayLenTotal / speed, 2)
-'
-'    GetStatusString = "Шаг " & fireModeller.CurrentStep & ", " & _
-'                    "времени: " & timeElapsed & "(" & timeElapsedTotal & ") мин., " & _
-'                    "путь: " & wayLen & "(" & wayLenTotal & ")" & _
-'                    "м, Площадь пожара: " & Round(Application.ActiveWindow.Selection(1).AreaIU * 0.00064516, 1) & "м.кв."
-'End Function
 
 Public Function IsMatrixBacked() As Boolean
 'Возвращает Истина, если матрица уже запечена и Ложь, если нет

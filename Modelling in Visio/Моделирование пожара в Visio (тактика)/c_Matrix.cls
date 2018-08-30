@@ -364,7 +364,19 @@ EX:
     IsCellMaxFire = False
 End Function
 
-
+Public Function IsOuterActiveCell(ByVal x As Long, ByVal y As Long) As Boolean
+'Проверяем, является ли клетка внешней активной, т.е. еще не горит на полную мщность и находится за пределами площади горения
+Dim val As Double
+    
+    On Error GoTo EX
+    
+    val = GetFirePower(x, y)
+    IsOuterActiveCell = val > 0 And val < maximumBurnPower
+        
+Exit Function
+EX:
+    
+End Function
 
 '-----------------------------Инструменты-------------------------------------------
 Private Function CreateNewCell(ByVal x As Long, ByVal y As Long) As c_Cell
