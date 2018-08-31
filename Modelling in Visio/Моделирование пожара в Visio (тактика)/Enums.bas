@@ -30,9 +30,24 @@ Enum Directions
     ld = 8      'Влево вниз
 End Enum
 
+'Типы пожарных стволов
+Enum NozzleTypes
+    waterHand = 0
+    waterLafet = 1
+    foamHand = 2
+    foamLafet = 3
+    powderHand = 4
+    powderLafet = 5
+    gas = 6
+    
+End Enum
 
-
-
+'Тип достаточности подаваемой воды
+Enum WaterExpenseKind
+    notSet = 0
+    notSufficient = 1
+    sufficient = 2
+End Enum
 
 'Enum CellSpreadType
 '    csstInner = 0

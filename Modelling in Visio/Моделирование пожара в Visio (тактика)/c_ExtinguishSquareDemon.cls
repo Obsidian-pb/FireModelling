@@ -11,7 +11,7 @@ Dim matrix As Variant                           'Матрица расчетной зоны
 Dim calculatedCells As Variant                  'Матрица рассчитанных клеток
 Dim grain As Integer                            'Размер зерна
 
-Public fireMatrixObject As c_Matrix             'Коллекция горящих клеток
+Public fireMatrixObject As c_Matrix             'Матрица расчетной зоны
 
 
 Const diag As Double = 1.4142135623731         'модификатор распространения вверх и вниз
@@ -48,20 +48,12 @@ Dim block As c_ExtinguishingBlock
      
     'Перебираем все блоки и для каждого из них строим зоны горения
     For Each block In extSquare.extinguishingBlocks
-        FillExtSquare block
-        
-'        For Each cell In block.extinguishingCells
-'
-'            Set shp = Application.ActivePage.DrawRectangle(cell.x * grain / mmInInch, cell.y * grain / mmInInch, _
-'                    (cell.x + 1) * grain / mmInInch, (cell.y + 1) * grain / mmInInch)
-'            shp.CellsSRC(visSectionObject, visRowLayerMem, visLayerMember).FormulaForceU = GetLayerNumber("ExtSquare")
-'            shp.Cells("LinePattern").FormulaU = "0"
-'            shp.Cells("FillForegnd").FormulaU = "4"
-'        Next cell
+        If block.alreadyCalculated = False Then
+            FillExtSquare block
+            block.alreadyCalculated = True
+        End If
     Next block
-    
-    
-    
+
 End Sub
 
 Public Sub DrawFireSquare(ByRef extSquare As c_ExtinguishingSquare)
@@ -73,7 +65,7 @@ Const mmInInch As Double = 25.4
     'Перебираем все блоки и для каждого из них строим зоны горения
     For Each block In extSquare.extinguishingBlocks
 '        FillExtSquare block
-        
+
         For Each cell In block.extinguishingCells
 
             Set shp = Application.ActivePage.DrawRectangle(cell.x * grain / mmInInch, cell.y * grain / mmInInch, _

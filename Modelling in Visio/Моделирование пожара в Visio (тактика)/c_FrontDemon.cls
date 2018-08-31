@@ -9,6 +9,7 @@ Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 Dim matrix As Variant
 
+Public grain As Integer
 
 
 
@@ -25,52 +26,74 @@ Public Sub CreateMatrix(ByVal x As Integer, ByVal y As Integer)
     ReDim matrix(x, y)
 End Sub
 
-
-
-
-Public Sub RunDemon(ByRef extSquare As c_ExtinguishingSquare, ByRef frontCellsCollection As Collection)
-'Разбиваем площадь пожара на блоки
-    
+Public Sub SetStartState(ByRef frontCellsCollection As Collection)
+'Устанавливаем стартовое состояние матрицы
     '1 Задаем стартовое состояние матрицы 5 - путь
     For Each cell In frontCellsCollection
         matrix(cell.x, cell.y) = CellType.fireFrontNotInBlock
     Next cell
+End Sub
+
+
+
+
+Public Sub RunDemon(ByRef extSquare As c_ExtinguishingSquare, ByRef frontCellsCollection As Collection, _
+                    ByRef nozzle As c_FireNozzleModel)
+'Разбиваем площадь пожара на блоки
+Dim block As c_ExtinguishingBlock
+
+    '1 проверяем, не входит ли точка контакта зоны работы ствола в фрагмент фронта пожара, который уже распределен
+    Set block = CheckBlockExists(extSquare, nozzle.fireContactCell)
+    If block Is Nothing Then
+        '2 разбить коллекцию фронта на участки не связанные между собой
+        BreakFront extSquare, frontCellsCollection, nozzle
+    Else
+        '3 Добавляем данные в существующий блок
+        block.expenseFact = block.expenseFact + nozzle.waterExpense
+    End If
     
-    '2 разбить коллекцию фронта на участки не связанные между собой
-    BreakFront extSquare, frontCellsCollection
+
 
 End Sub
 
 
 
 
-Private Sub BreakFront(ByRef extSquare As c_ExtinguishingSquare, ByRef frontCellsCollection As Collection)
+Private Sub BreakFront(ByRef extSquare As c_ExtinguishingSquare, ByRef frontCellsCollection As Collection, _
+                    ByRef nozzle As c_FireNozzleModel)
 'Разбиваем фронт пожара на участки
-Dim cell As c_Cell
+'Dim cell As c_Cell
 Dim extBlock As c_ExtinguishingBlock
 Dim tmpColl As Collection
 
-    'Перебираем все клетки в коллекции фронта пожара
-    For Each cell In frontCellsCollection
+    'Перебираем все клетки в коллекции стартовых клеток
+'    For Each cell In startCellsCollection
+        
         'если клетка еще не распределена по блокам, начинаем от нее рекурсивный поиск всех клеток плоащди тушения данного блока
-        If matrix(cell.x, cell.y) = CellType.fireFrontNotInBlock Then
+'        If matrix(startCell.x, startCell.y) = CellType.fireFrontNotInBlock Then
             'создаем новую коллекцию
             Set tmpColl = New Collection
             'Для новой коллекции выполняем рекурсивное наполнение от текущей ячейки
-            TryAddCell tmpColl, cell
+            TryAddCell tmpColl, nozzle.fireContactCell
             
             'Создаем новый блок и передаем ему временную коллекцию клеток фронта
             Set extBlock = New c_ExtinguishingBlock
             Set extBlock.fireFrontCells = tmpColl
             AddCellsToCollection extBlock.extinguishingCells, tmpColl
             '---Устанавливаем глубину тушения
-                extBlock.fireWay = 5000     'Для ручных стволов
+                If nozzle.nozzleType = waterHand Then
+                    extBlock.fireWay = 5000     'Для ручных стволов
+                Else
+                    extBlock.fireWay = 10000     'Для лафетных стволов
+                End If
+                extBlock.expenseFact = extBlock.expenseFact + nozzle.waterExpense
+                extBlock.grain = grain
             
             'Добавляем созданный блок в коллекцию блоков модели площади тушения
             extSquare.AddExtinguishingBlock extBlock
-        End If
-    Next cell
-    
+'        End If
+'    Next cell
+        
 End Sub
 
 Private Sub TryAddCell(ByRef thisColl As Collection, ByVal cell As c_Cell)
@@ -112,7 +135,45 @@ Dim cell As c_Cell
     Next cell
 End Sub
 
+Private Function CheckBlockExists(ByRef extSquare As c_ExtinguishingSquare, ByRef cell As c_Cell) As c_ExtinguishingBlock
+'Пытаемся найти блок к которому может относиться пришедшая клетка. Еслитн аходим возвращаем ссылку на него, иначе - Nothing
+Dim blck As c_ExtinguishingBlock
 
+    For Each blck In extSquare.extinguishingBlocks
+        If blck.IsCellInThisFront(cell) Then
+            Set CheckBlockExists = blck
+            Exit Function
+        End If
+    Next blck
+Set CheckBlockExists = Nothing
+End Function
+
+'Public Function DrawBlockExists(ByRef extSquare As c_ExtinguishingSquare, ByRef cell As c_Cell) As c_ExtinguishingBlock
+''Пытаемся найти блок к которому может относиться пришедшая клетка. Еслитн аходим возвращаем ссылку на него, иначе - Nothing
+'Dim blck As c_ExtinguishingBlock
+'
+'Dim c As c_Cell
+'Dim shp As Visio.Shape
+'Const mmInInch As Double = 25.4
+'
+'    For Each blck In extSquare.extinguishingBlocks
+'        For Each c In blck.fireFrontCells
+'            Dim shp As Visio.Shape
+'            Set shp = Application.ActivePage.DrawRectangle(c.x * grain / mmInInch, c.y * grain / mmInInch, _
+'                    (c.x + 1) * grain / mmInInch, (c.y + 1) * grain / mmInInch)
+'            shp.CellsSRC(visSectionObject, visRowLayerMem, visLayerMember).FormulaForceU = GetLayerNumber("Front")
+'            shp.Cells("LinePattern").FormulaU = "0"
+'            shp.Cells("FillForegnd").FormulaU = "3"
+'        Next c
+'
+'
+''        If blck.IsCellInThisFront(cell) Then
+''            Set CheckBlockExists = blck
+''            Exit Function
+''        End If
+'    Next blck
+'Set CheckBlockExists = Nothing
+'End Function
 
 
 

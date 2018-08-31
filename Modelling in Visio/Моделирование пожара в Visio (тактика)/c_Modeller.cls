@@ -15,13 +15,14 @@ Const orto As Double = 0.14142135623731                     ' Коэффициент мощнос
 Const mmInInch As Double = 25.4
 
 Private matrix As c_Matrix
-Private extSquare As c_ExtinguishingSquare                  'Объект лощади тушения
+Private extSquare As c_ExtinguishingSquare                  'Объект площади тушения
 
 Public grain As Double              'размер зерна расчета (клетки)
 Private step As Integer             'Счетчик количества шагов (общий, без моделирвоания и с моделирвоанием)
 Private calcStep As Integer         'Счетчик количества раелизованных (ТОЛЬКО с моделированием) шагов
 Public distance As Single           'общая дистанция пройденная при моделирвоании (условная для идеального случая)
 Public time As Single               'общее время прошедшее при моделирвоании (условная для идеального случая)
+Public intenseNeed As Single        'Требуемая интенсивность подачи воды л/(с*м.кв.)
 
 
 Public Sub SetMatrix(ByRef m As c_Matrix)
@@ -167,8 +168,18 @@ Dim cell As c_Cell
         End If
     Next cell
     
-    'Рассчитываем площади тушения
-    FireSquareCalculate
+    'Если время расчета более 10 минут - запускаем анализ наличия поджанных стволов
+    'if
+    Dim nozzleDemon As c_FireNozzlesDemon
+    Set nozzleDemon = New c_FireNozzlesDemon
+    nozzleDemon.SetGrain = grain
+    Set nozzleDemon.SetMatrix = matrix
+    nozzleDemon.RunDemon
+    
+    'Рассчитываем площади тушения для каждого имеющегося на странице ствола, при условии, что для него укзана точка контакта с фронтом пожара
+    FireSquareCalculate nozzleDemon.nozzles
+    
+    
     
 '    Debug.Print matrix.fireMaxCells.Count * grain ^ 2 / 1000000
 
@@ -409,21 +420,66 @@ End Function
 
 
 '----------------------------Расчет площадей тушения--------------------------
-Public Sub FireSquareCalculate()
+Public Sub FireSquareCalculate(ByRef nozzleCollection As Collection)
 'Процедура получения блоков площади тушения
-'Dim extSquare As c_ExtinguishingSquare
+Dim nozzle As c_FireNozzleModel
 Dim frontDemonImpl As c_FrontDemon
 Dim extinguishingSquareDemon As c_ExtinguishSquareDemon
-
+    
     Set extSquare = New c_ExtinguishingSquare
+    extSquare.intenseNeed = intenseNeed
+    
     Set frontDemonImpl = New c_FrontDemon
     Set extinguishingSquareDemon = New c_ExtinguishSquareDemon
     
     frontDemonImpl.CreateMatrix matrix.DimensionX, matrix.DimensionY
-    frontDemonImpl.RunDemon extSquare, matrix.fireFrontCells
+    frontDemonImpl.grain = grain
+    frontDemonImpl.SetStartState matrix.fireFrontCells
+    
     extinguishingSquareDemon.CreateMatrix matrix
     extinguishingSquareDemon.SetGrain = grain
-    extinguishingSquareDemon.RunDemon extSquare
+    
+    
+    Dim i As Integer
+    i = 0
+    For Each nozzle In nozzleCollection
+        If Not nozzle.fireContactCell Is Nothing Then
+'            Debug.Assert i < 1
+            
+'            If i > 0 Then frontDemonImpl.DrawBlockExists extSquare, nozzle.fireContactCell
+            'Формируем коллекцию фрагментов площади фронта пожара (и блоков тушения на их основе)
+            frontDemonImpl.RunDemon extSquare, matrix.fireFrontCells, nozzle
+            
+            'Рассчитываем размер каждого из блоков
+            extinguishingSquareDemon.RunDemon extSquare
+
+            i = i + 1
+        End If
+    Next nozzle
+    
+    
+    Dim blck As c_ExtinguishingBlock
+    Dim extSquareMeters As Single
+    Dim needExpense As Single
+    Dim factExpense As Single
+    Dim expKindForAll As String
+    For Each blck In extSquare.extinguishingBlocks
+        extSquareMeters = extSquareMeters + blck.GetSquare
+        needExpense = needExpense + blck.GetExpenceNeed
+        factExpense = factExpense + blck.expenseFact
+        expKindForAll = expKindForAll & " " & blck.GetWaterExpenseKind
+    Next blck
+    
+'    If extSquare.extinguishingBlocks.Count > 0 Then
+'        Set blck = extSquare.extinguishingBlocks(1)
+        Debug.Print "Площадь тушения: " & extSquareMeters
+        Debug.Print "Требуемый расход : " & needExpense
+        Debug.Print "Фактический расход : " & factExpense
+        Debug.Print "Достаточность расхода: " & expKindForAll
+'    End If
+    
+    
+    
     
     
     
@@ -435,14 +491,8 @@ Public Sub DrawExtSquareByDemon()
 'Dim frontDemonImpl As c_FrontDemon
 Dim extinguishingSquareDemon As c_ExtinguishSquareDemon
 
-    
-'    Set extSquare = New c_ExtinguishingSquare
-'    Set frontDemonImpl = New c_FrontDemon
     Set extinguishingSquareDemon = New c_ExtinguishSquareDemon
     
-'    frontDemonImpl.CreateMatrix matrix.DimensionX, matrix.DimensionY
-'    frontDemonImpl.RunDemon extSquare, matrix.fireFrontCells
-'    extinguishingSquareDemon.CreateMatrix matrix
     extinguishingSquareDemon.SetGrain = grain
     extinguishingSquareDemon.DrawFireSquare extSquare
 End Sub
