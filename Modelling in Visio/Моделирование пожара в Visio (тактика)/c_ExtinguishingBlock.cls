@@ -9,7 +9,7 @@ Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 Private ID As Integer                           'ID блока - нужен для идентификации, начинается с 1.
 
-'Потом добавить матрицу имеющихся клеток!!! - для ускорения работы
+Private cellsMatrix As Variant                  'Матрица клеток
 
 Public extinguishingCells As Collection         'Коллекция клеток зоны площади тушения, относящихся к данному блоку
 Public fireFrontCells As Collection             'Коллекция клеток фронта пожара, относящихся к даннойму блоку
@@ -34,7 +34,39 @@ Private Sub Class_Initialize()
     alreadyCalculated = False
 End Sub
 
+'-------------------------------Работа с матрицей---------------------------------
+Public Sub CreateMatrix(ByVal x As Integer, ByVal y As Integer)
+'Активируем матрицу в соответсвии с переданными размерами
+    ReDim cellsMatrix(x, y)
+End Sub
 
+Public Sub AddToExtCellsCollection(ByRef coll As Collection)
+'Добавляем коллекцию входящих клеток в коллекцию горящих
+Dim cell As c_Cell
+    
+    AddCellsToCollection extinguishingCells, coll
+    
+    'Для всех входящих клеток устанавливаем значение "в зоне тушения"
+    For Each cell In coll
+        cellsMatrix(cell.x, cell.y) = ExtCellType.inExtSquare
+    Next cell
+End Sub
+
+Public Sub AddToActiveCellsCollection(ByRef coll As Collection)
+'Добавляем коллекцию входящих клеток в коллекцию активных клеток (внешних, разгорающихся)
+Dim cell As c_Cell
+    
+    AddCellsToCollection activeCells, coll
+    
+    'Для всех входящих клеток устанавливаем значение "в зоне тушения"
+    For Each cell In coll
+        cellsMatrix(cell.x, cell.y) = ExtCellType.inExtSquare
+    Next cell
+End Sub
+
+Public Function IsCellExtinguished(ByVal x As Long, ByVal y As Long) As Boolean
+    IsCellExtinguished = cellsMatrix(x, y) = ExtCellType.inExtSquare
+End Function
 
 
 
@@ -91,6 +123,14 @@ Property Get GetID()
 End Property
 
 
-'Property Get WaterValueKind() As Boolean
-'    if
-'End Property
+
+
+'------------------------Инструменты-------------------------------------------------
+Private Sub AddCellsToCollection(ByRef col1 As Collection, ByRef col2 As Collection)
+'Добавляем все клетки из коллекции 2 в коллекцию 1
+Dim cell As c_Cell
+
+    For Each cell In col2
+        col1.Add cell, cell.x & ":" & cell.y
+    Next cell
+End Sub

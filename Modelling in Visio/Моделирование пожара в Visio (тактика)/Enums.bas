@@ -49,6 +49,13 @@ Enum WaterExpenseKind
     sufficient = 2
 End Enum
 
+'Наличие ячейки в зоне тушения
+Enum ExtCellType
+    notInExtSquare = 0
+    inExtSquare = 1
+End Enum
+
+
 'Enum CellSpreadType
 '    csstInner = 0
 '    csstSingleton = 1

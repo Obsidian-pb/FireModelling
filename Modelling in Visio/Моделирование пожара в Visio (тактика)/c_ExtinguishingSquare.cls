@@ -24,3 +24,32 @@ Public Sub AddExtinguishingBlock(ByRef block As c_ExtinguishingBlock)
     extinguishingBlocks.Add block
 
 End Sub
+
+Public Function IsCellExtinguished(ByVal x As Long, ByVal y As Long) As WaterExpenseKind
+'Проверяем имеется ли входящая клетка в коллекциях тушащихся в каждом из блоков
+Dim block As c_ExtinguishingBlock
+    
+    For Each block In extinguishingBlocks
+        If block.IsCellExtinguished(x, y) Then
+            IsCellExtinguished = block.GetWaterExpenseKind
+
+            Exit Function
+        End If
+    Next block
+    
+IsCellExtinguished = notSet
+End Function
+
+'Public Function IsCellExtinguished(ByVal x As Long, ByVal y As Long) As Boolean
+''Проверяем имеется ли входящая клетка в коллекциях тушащихся в каждом из блоков
+'Dim block As c_ExtinguishingBlock
+'
+'    For Each block In extinguishingBlocks
+'        If block.IsCellExtinguished(x, y) Then
+'            IsCellExtinguished = True
+'            Exit Function
+'        End If
+'    Next block
+'
+'IsCellExtinguished = False
+'End Function

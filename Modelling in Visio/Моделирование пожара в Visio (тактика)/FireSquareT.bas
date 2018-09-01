@@ -39,7 +39,7 @@ Dim matrixBuilder As c_MatrixBuilder
 
     'Активируем модельера
     Set fireModeller = New c_Modeller
-    fireModeller.SetMatrix matrixObj
+    fireModeller.setMatrix matrixObj
     
     'Указываем модельеру значение зерна
     fireModeller.grain = grain
@@ -134,6 +134,9 @@ Public Sub RunFire(ByVal timeElapsed As Single, ByVal speed As Single)
         
         i = i + 1
         
+        fireModeller.distance = realCurrentDistance ' currentDistance
+        fireModeller.time = currentTime
+        
         Application.ActiveWindow.DeselectAll
         DoEvents
         
@@ -143,8 +146,8 @@ Public Sub RunFire(ByVal timeElapsed As Single, ByVal speed As Single)
         End If
     Loop
     
-    fireModeller.distance = realCurrentDistance ' currentDistance
-    fireModeller.time = currentTime
+'    fireModeller.distance = realCurrentDistance ' currentDistance
+'    fireModeller.time = currentTime
         
     Debug.Print "Всего затрачено " & tmr2.GetElapsedTime & "с."
     

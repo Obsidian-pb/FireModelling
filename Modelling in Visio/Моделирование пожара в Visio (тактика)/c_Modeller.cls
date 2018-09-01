@@ -25,7 +25,7 @@ Public time As Single               'общее врем€ прошедшее при моделирвоании (ус
 Public intenseNeed As Single        '“ребуема€ интенсивность подачи воды л/(с*м.кв.)
 
 
-Public Sub SetMatrix(ByRef m As c_Matrix)
+Public Sub setMatrix(ByRef m As c_Matrix)
 '”станавливаем ссылку на матрицу
     Set matrix = m
 End Sub
@@ -168,20 +168,20 @@ Dim cell As c_Cell
         End If
     Next cell
     
-    '≈сли врем€ расчета более 10 минут - запускаем анализ наличи€ поджанных стволов
-    'if
-    Dim nozzleDemon As c_FireNozzlesDemon
-    Set nozzleDemon = New c_FireNozzlesDemon
-    nozzleDemon.SetGrain = grain
-    Set nozzleDemon.SetMatrix = matrix
-    nozzleDemon.RunDemon
-    
-    '–ассчитываем площади тушени€ дл€ каждого имеющегос€ на странице ствола, при условии, что дл€ него укзана точка контакта с фронтом пожара
-    FireSquareCalculate nozzleDemon.nozzles
-    
-    
-    
-'    Debug.Print matrix.fireMaxCells.Count * grain ^ 2 / 1000000
+    '«апускаем анализ наличи€ пожарнных стволов
+'    If time > 10 Then
+        Dim nozzleDemon As c_FireNozzlesDemon
+        Set nozzleDemon = New c_FireNozzlesDemon
+        nozzleDemon.SetGrain = grain
+        Set nozzleDemon.setMatrix = matrix
+        nozzleDemon.RunDemon
+        
+        '¬озможно имеет смысл оставить в качестве опции (или еще как то) безусловный расчет площади тушени€, в независимаости от того, поданы стволы или нет - это важно
+        '–ассчитываем площади тушени€ дл€ каждого имеющегос€ на странице ствола, при условии, что дл€ него укзана точка контакта с фронтом пожара
+        FireSquareCalculate nozzleDemon.nozzles
+'    End If
+
+
 
     '”величиваем номер расчитанного шага
     calcStep = calcStep + 1
@@ -201,7 +201,21 @@ Dim firePower As Double
         Exit Sub
     End If
     
-    '3 јтакуем соседние клетки
+    '3 ѕровер€ем четность хода, врем€ прошедшее с начала пожара (более 10 минут) и подачу воды на тушение
+    If Not extSquare Is Nothing Then
+        Select Case extSquare.IsCellExtinguished(x, y)
+            Case Is = WaterExpenseKind.notSet               '¬ода не подаетс€ или клетка не находитс€ в зоне тушени€
+                'Ќичего не делаем - идем дальше и строим как ни в чем не бывало
+            Case Is = WaterExpenseKind.notSufficient        '¬оды подаетс€ недостаточно - считаем только каждый второй раз
+                If Int(step / 2) = step / 2 And time > 10 Then
+                    Exit Sub
+                End If
+            Case Is = WaterExpenseKind.sufficient           '¬оды поджаетс€ достаточно - не рассчитываем далее
+                Exit Sub
+        End Select
+    End If
+    
+    '4 јтакуем соседние клетки
     'по диагонали
         RizeGettedCellPower x - 1, y - 1, firePower * diag
         RizeGettedCellPower x - 1, y + 1, firePower * diag

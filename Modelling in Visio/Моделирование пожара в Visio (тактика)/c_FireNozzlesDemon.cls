@@ -33,7 +33,7 @@ Public Property Let SetGrain(ByVal grainValue)
     grain = grainValue
 End Property
 
-Public Property Set SetMatrix(ByRef matr As c_Matrix)
+Public Property Set setMatrix(ByRef matr As c_Matrix)
     Set fireMatrixObject = matr
 End Property
 
@@ -50,9 +50,18 @@ Dim nozzle As c_FireNozzleModel
     For Each nozzle In nozzles
         ReDim matrix(fireMatrixObject.DimensionX, fireMatrixObject.DimensionY)
         ReDim calculatedCells(fireMatrixObject.DimensionX, fireMatrixObject.DimensionY)
-        calculatedCells(nozzle.position.x, nozzle.position.y) = 1
-        '≈сли зона дос€гаемости ствола касаетс€ где-либо фронта, далее отдаем команду модельеру на расчет блока тушени€
-        checkFireIntercourse nozzle
+        
+        'ѕровер€ем, находитс€ ли ствол в пределах страницы
+        Debug.Print UBound(calculatedCells, 1) & " " & UBound(calculatedCells, 2)
+        If nozzle.position.x < 0 Or nozzle.position.y < 0 Or _
+                nozzle.position.x > UBound(calculatedCells, 1) Or nozzle.position.y > UBound(calculatedCells, 2) Then
+        Else
+            calculatedCells(nozzle.position.x, nozzle.position.y) = 1
+            '≈сли зона дос€гаемости ствола касаетс€ где-либо фронта, далее отдаем команду модельеру на расчет блока тушени€
+            checkFireIntercourse nozzle
+        End If
+        
+
     Next nozzle
     
     
@@ -106,10 +115,17 @@ Private Sub checkFireIntercourse(ByRef nozzle As c_FireNozzleModel)
 Dim coll As Collection
 Dim maxWay As Integer
     
-    If nozzle.nozzleType = waterLafet Then
-        maxWay = 10000
+
+    If SettingsForm.optValue Then
+        On Error GoTo EX
+        maxWay = SettingsForm.txtNozzleRangeValue * 1000
+        On Error GoTo EX1
     Else
-        maxWay = 5000
+        If nozzle.nozzleType = waterLafet Then
+            maxWay = 10000
+        Else
+            maxWay = 5000
+        End If
     End If
     
     Set coll = New Collection
@@ -119,6 +135,12 @@ Dim maxWay As Integer
         Set coll = OneStep(nozzle, coll, maxWay)
         If coll Is Nothing Then Exit Do
     Loop
+Exit Sub
+EX:
+    MsgBox "Ќе правильно указано значение рассто€ни€ рассчета стволов"
+Exit Sub
+EX1:
+    
 End Sub
 
 

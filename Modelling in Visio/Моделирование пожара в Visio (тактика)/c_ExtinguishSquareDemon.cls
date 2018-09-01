@@ -97,7 +97,8 @@ Dim i As Integer
         SetCellsToCalculated tmpColl
 
         'Добавляем клетки из полученной коллекции в коллекцию клеток площади тушения блока
-        AddCellsToCollection block.extinguishingCells, tmpColl
+        block.AddToExtCellsCollection tmpColl
+'        AddCellsToCollection block.extinguishingCells, tmpColl
         'Байпасс
         i = i + 1
         If i > 10000 Then
@@ -134,7 +135,8 @@ Dim i As Integer
         SetCellsToCalculated tmpColl
 
         'Добавляем клетки из полученной коллекции в коллекцию клеток площади тушения блока
-        AddCellsToCollection block.activeCells, tmpColl
+        block.AddToActiveCellsCollection tmpColl
+'        AddCellsToCollection block.activeCells, tmpColl
         'Байпасс
         i = i + 1
         If i > 10000 Then

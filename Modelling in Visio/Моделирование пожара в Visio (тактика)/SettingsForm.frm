@@ -1,7 +1,7 @@
 VERSION 5.00
 Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} SettingsForm 
    Caption         =   "Параметры построения"
-   ClientHeight    =   4020
+   ClientHeight    =   4980
    ClientLeft      =   45
    ClientTop       =   375
    ClientWidth     =   8640
@@ -22,6 +22,24 @@ Dim matrixChecked As Long       'Количество проверенных клеток
 Private Sub btnStopModelling_Click()
     stopModellingFlag = True
 End Sub
+
+Private Sub optTTX_Change()
+'    txtNozzleRangeValue.Enabled = False
+End Sub
+
+
+
+Private Sub optValue_Change()
+    txtNozzleRangeValue.Enabled = optValue.value
+    If txtNozzleRangeValue.Enabled Then
+        txtNozzleRangeValue.BackColor = vbWhite
+    Else
+        txtNozzleRangeValue.BackColor = &H8000000F
+    End If
+    
+End Sub
+
+
 
 '------------------------Процедуры, собственно формы--------------------------
 Private Sub UserForm_Activate()

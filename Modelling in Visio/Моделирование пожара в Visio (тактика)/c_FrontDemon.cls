@@ -79,7 +79,9 @@ Dim tmpColl As Collection
             'Создаем новый блок и передаем ему временную коллекцию клеток фронта
             Set extBlock = New c_ExtinguishingBlock
             Set extBlock.fireFrontCells = tmpColl
-            AddCellsToCollection extBlock.extinguishingCells, tmpColl
+            extBlock.CreateMatrix UBound(matrix, 1), UBound(matrix, 2)
+            extBlock.AddToExtCellsCollection tmpColl
+'            AddCellsToCollection extBlock.extinguishingCells, tmpColl
             '---Устанавливаем глубину тушения
                 If nozzle.nozzleType = waterHand Then
                     extBlock.fireWay = 5000     'Для ручных стволов
