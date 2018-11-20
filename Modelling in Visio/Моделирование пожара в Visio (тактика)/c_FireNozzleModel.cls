@@ -14,6 +14,6 @@ Public position As c_Cell                   'Клетка координаты ствола
 Public fireContactCell As c_Cell            'Клетка координаты контакта рабочей зоны ствола с фронтом пожара
 Public nozzleType As NozzleTypes            'Тип ствола
 Public waterExpense As Single               'Расход ствола л/с
-
+Public angle As Double                      'Угол наклона ствола
 
 

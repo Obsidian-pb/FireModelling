@@ -56,6 +56,15 @@ Dim arr() As Integer
     Set maskBuilder = New c_MaskBuilder
     '---Создаем маску
     maskBuilder.s_makeMask
+        '---Если маска стен не была создана в результате отсутсвия таковых - возвращаем чисутю матрицу
+        If maskBuilder.pO_MaskShape Is Nothing Then
+            '---Возвращаем результат - матрицу заполненную данными о ограждающих конструкциях
+            NewMatrix = matrix
+            
+            '---Уничтожаем построитель масок
+            Set maskBuilder = Nothing
+            Exit Function
+        End If
     '---Создаем маску свободного пространства
     maskBuilder.s_makeOpenSpaceMask
 

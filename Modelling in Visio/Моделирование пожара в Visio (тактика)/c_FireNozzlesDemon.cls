@@ -15,8 +15,11 @@ Private fireMatrixObject As c_Matrix                 'Объект расчетной зоны (вне
 
 Private grain As Integer                             'Зерно расчета
 
+Const halfRadian As Double = 1.570796326
 Const diag As Double = 1.4142135623731              'модификатор распространения вверх и вниз
 Const orto As Double = 1                            'модификатор распротсранения по диагонали
+
+Const mmInInch As Double = 25.4
 
 '------------------Класс демона расчетчика стволов----------------------------
 '1 - Находит все стволы расположенные на листе
@@ -91,6 +94,7 @@ Dim indexPers As Integer
                 Set nozzle.position = GetNozzlePosition(shp.Cells("PinX").Result(visMillimeters), _
                     shp.Cells("PinY").Result(visMillimeters))
                 nozzle.waterExpense = shp.Cells("User.PodOut").Result(visNumber)
+                nozzle.angle = shp.Cells("Angle").Result(visNumber) + halfRadian
                 nozzles.Add nozzle
             End If
         End If
@@ -112,9 +116,16 @@ End Function
 
 
 Private Sub checkFireIntercourse(ByRef nozzle As c_FireNozzleModel)
+'Проверяем пересечение направления работы ствола с пожаром
 Dim coll As Collection
 Dim maxWay As Integer
-    
+
+Dim cs As Double
+Dim sn As Double
+Dim x As Integer
+Dim y As Integer
+Dim i As Integer
+Dim cell As c_Cell
 
     If SettingsForm.optValue Then
         On Error GoTo EX
@@ -128,13 +139,48 @@ Dim maxWay As Integer
         End If
     End If
     
-    Set coll = New Collection
-    coll.Add nozzle.position
+'    Set coll = New Collection
+'    coll.Add nozzle.position
+'
+'    Do While coll.Count > 0
+'        Set coll = OneStep(nozzle, coll, maxWay)
+'        If coll Is Nothing Then Exit Do
+'    Loop
     
-    Do While coll.Count > 0
-        Set coll = OneStep(nozzle, coll, maxWay)
-        If coll Is Nothing Then Exit Do
-    Loop
+
+    'Проверяем пересечение по направлению пересечения со стволом
+        'Заранее определяем косинус и синус угла - для дальнейшего построения линии
+        cs = Cos(nozzle.angle)
+        sn = Sin(nozzle.angle)
+        
+        'Последовательно проверяем все клеткии линии, на предмет того, пересекаются ли они с фронтом пожара
+        i = 0
+        Set cell = New c_Cell
+        cell.x = nozzle.position.x
+        cell.y = nozzle.position.y
+        Do While CellType = 0
+            cell.x = nozzle.position.x + Int(cs * i)
+            cell.y = nozzle.position.y + Int(sn * i)
+'------------------
+'            Dim shp As Visio.Shape
+'        Set shp = Application.ActivePage.DrawRectangle(cell.x * grain / mmInInch, cell.y * grain / mmInInch, _
+'                (cell.x + 1) * grain / mmInInch, (cell.y + 1) * grain / mmInInch)
+'        shp.CellsSRC(visSectionObject, visRowLayerMem, visLayerMember).FormulaForceU = GetLayerNumber("spray")
+'        shp.Cells("LinePattern").FormulaU = "0"
+'        shp.Cells("FillForegnd").FormulaU = "2"
+'------------------
+            
+'            Debug.Print cell.x & ", " & cell.y & " -> " & nozzle.position.x & ", " & nozzle.position.y
+            
+            If IsIntercourseWithFront2(nozzle, cell) Then
+                Exit Do
+            End If
+            If Math.Sqr((cell.x - nozzle.position.x) ^ 2 + (cell.y - nozzle.position.y) ^ 2) * grain > maxWay Then
+                Exit Do
+            End If
+            i = i + 1
+        Loop
+    
 Exit Sub
 EX:
     MsgBox "Не правильно указано значение расстояния рассчета стволов"
@@ -154,7 +200,23 @@ Dim cellWay As Single
     Set newColl = New Collection
     
     For Each cell In inColl
-        cellWay = matrix(cell.x, cell.y)
+'        cellWay = matrix(cell.x, cell.y)
+'        'Распространение по прямой
+'            'Заранее определяем косинус и синус угла - для дальнейшего построения линии
+'            cs = Cos(nozzle.angle)
+'            sn = Sin(nozzle.angle)
+'
+'            'Последовательно проверяем все клеткии линии, на предмет того, пересекаются ли они с фронтом пожара
+'            x = cell.x + Int(cs * i)
+'            y = cell.y + Int(sn * i)
+'            Set cell = NewCell(x, y)
+'
+'            If IsIntercourseWithFront(nozzle, newColl, cell, _
+'                                        Math.Sqr((x - nozzle.position.x) ^ 2 + (y - nozzle.position.y) ^ 2) * grain, maxWay) Then
+'                Set OneStep = Nothing
+'                Exit Function
+'            End If
+        
         'Распространяем на соседние клетки
         If IsIntercourseWithFront(nozzle, newColl, NextCell(cell, l), cellWay + orto * grain, maxWay) Then
             Set OneStep = Nothing
@@ -235,7 +297,38 @@ Private Function IsIntercourseWithFront(ByRef nozzle As c_FireNozzleModel, ByRef
     
 End Function
 
+Private Function IsIntercourseWithFront2(ByRef nozzle As c_FireNozzleModel, ByRef cell As c_Cell) As Boolean
+'Проверяем является ли клетка частью вронта пожара
+    'Если клетка находится за пределами матрицы - выходим
+    If Not IsInMatrix(cell) Then Exit Function
+    
+    'Проверяем, является ли ячейка открытым пространством
+    If Not fireMatrixObject.GetOpenSpaceLayerValue(cell.x, cell.y) = CellState.csOpenSpace Then Exit Function
+    
+'    'Если больше предлагаемого пути, то...
+'    If matrix(cell.x, cell.y) = 0 Or matrix(cell.x, cell.y) > wayLen Then
+        'Проверяем, является ли клетка клеткой фронта пожара
+    'ДОБАВИТЬ ПРОВЕРКУ МАКСИМАЛЬНОГО ГОРЕНИЯ!!!
+        If fireMatrixObject.IsCellMaxFire(cell.x, cell.y) Then
+            If Not fireMatrixObject.IsInner(cell.x, cell.y) Then
+                'Добавляем для ствола значение точки контакта с фронтом пожара
+'                Debug.Print "cell." & cell.x & ":" & cell.y & " команда на отрисовку!!!"
+                Set nozzle.fireContactCell = cell
+                
+                'Выходим из функции возвратив Истина - зона работы ствола касается фронта пожара (найдена!)
+                IsIntercourseWithFront2 = True
+                Exit Function
+            End If
+        End If
+        
+'        'Ставим новое значение и пытаемся добавить в коллекция (если такая клетка в коллекции уже есть, ничего не происходит - через Error)
+'        matrix(cell.x, cell.y) = wayLen
 
+'        On Error Resume Next
+'        coll.Add cell, cell.x & ":" & cell.y
+'    End If
+    
+End Function
 
 
 
