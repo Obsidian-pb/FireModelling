@@ -4,7 +4,7 @@ Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} SettingsForm
    ClientHeight    =   4980
    ClientLeft      =   45
    ClientTop       =   375
-   ClientWidth     =   8640
+   ClientWidth     =   8610
    OleObjectBlob   =   "SettingsForm.frx":0000
    ShowModal       =   0   'False
    StartUpPosition =   1  'CenterOwner
@@ -86,13 +86,15 @@ Private Sub btnRunFireModelling_Click()
     'Определяем требуемое количество шагов
     Dim spd As Single
     Dim timeElapsed As Single
+    Dim intenseNeed As Single
     spd = Me.txtSpeed
     timeElapsed = Me.txtTime
+    intenseNeed = CSng(Replace(Me.txtIntense, ".", ","))
     
     'проверяем, все ли данные указаны верно
     If timeElapsed > 0 And spd > 0 Then
         'Строим площадь
-        RunFire timeElapsed, spd
+        RunFire timeElapsed, spd, intenseNeed
     Else
         MsgBox "Не все данные корректно указаны!", vbCritical
     End If

@@ -44,8 +44,8 @@ Dim matrixBuilder As c_MatrixBuilder
     'Указываем модельеру значение зерна
     fireModeller.grain = grain
     
-    'Указываем модельеру значение требуемой интенсивности подачи воды
-    fireModeller.intenseNeed = 0.1          'ВРЕМЕННО 0,1 - потом нужно сделать указание из формы!!!
+'    'Указываем модельеру значение требуемой интенсивности подачи воды
+'    fireModeller.intenseNeed = 0.1          'ВРЕМЕННО 0,1 - потом нужно сделать указание из формы!!!
 
     'Ищем фигуры очага и по их координатам устанавливаем точки начала пожара
     GetFirePoints
@@ -64,7 +64,7 @@ Dim matrixBuilder As c_MatrixBuilder
 End Sub
 
 
-Public Sub RunFire(ByVal timeElapsed As Single, ByVal speed As Single)
+Public Sub RunFire(ByVal timeElapsed As Single, ByVal speed As Single, ByVal intenseNeed As Single)
 'Моделируем площадь горения до тех пор, пока расчетный путь пройденный огнем не станет больше distance + пройденный ранее (хранится в модельере)
     
     'Включаем обработчик ошибок - для предупреждения об отсутствии запеченной матрицы
@@ -88,6 +88,9 @@ Public Sub RunFire(ByVal timeElapsed As Single, ByVal speed As Single)
     Dim currentTime As Single               'Текущее время с начала расчета
     Dim prevTime As Single                  'Время за которое проейден предыдущий этап расчета
     Dim diffTime As Single                  'Время за которое проейден текущий этап расчета
+    
+    'Указываем модельеру значение требуемой интенсивности подачи воды
+    fireModeller.intenseNeed = intenseNeed
     
     
     prevDistance = fireModeller.distance
