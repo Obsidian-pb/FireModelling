@@ -40,6 +40,17 @@ Dim block As c_ExtinguishingBlock
 IsCellExtinguished = notSet
 End Function
 
+Public Function GetSquare() As Single
+'Функция возвращает площадь тушения всех блоков, т.е. общую площадь тушения для данного пожара
+Dim block As c_ExtinguishingBlock
+Dim tmpSquare As Single
+    
+    For Each block In extinguishingBlocks
+        tmpSquare = tmpSquare + block.GetSquare
+    Next block
+GetSquare = tmpSquare
+End Function
+
 'Public Function IsCellExtinguished(ByVal x As Long, ByVal y As Long) As Boolean
 ''Проверяем имеется ли входящая клетка в коллекциях тушащихся в каждом из блоков
 'Dim block As c_ExtinguishingBlock

@@ -8,6 +8,8 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 Dim matrix As Variant
+Private dimensionByX As Long                                        'Размерность матрицы по ширине (x)
+Private dimensionByY As Long                                        'Размерность матрицы по высоте (y)
 
 Public grain As Integer
 
@@ -23,6 +25,8 @@ End Enum
 
 Public Sub CreateMatrix(ByVal x As Integer, ByVal y As Integer)
 'Активируем матрицу в соответсвии с переданными размерами
+    dimensionByX = x
+    dimensionByY = y
     ReDim matrix(x, y)
 End Sub
 
@@ -100,6 +104,9 @@ End Sub
 
 Private Sub TryAddCell(ByRef thisColl As Collection, ByVal cell As c_Cell)
 'Пытаемся добавить клетку в коллекцию (рекурсия)
+    
+    'Если указанная точка находится за пределами матрицы - выходим из процедуры
+    If cell.x < 0 Or cell.y < 0 Or cell.x > dimensionByX - 1 Or cell.y > dimensionByY - 1 Then Exit Sub
     
     'Проверяем является ли данная клетка клеткой фронта пожара
     If matrix(cell.x, cell.y) = CellType.notFireFront Then Exit Sub

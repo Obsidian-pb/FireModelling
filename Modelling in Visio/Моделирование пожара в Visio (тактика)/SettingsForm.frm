@@ -55,6 +55,8 @@ Private Sub UserForm_Activate()
         lblMatrixIsBaked.Caption = "Матрица не запечена."
         lblMatrixIsBaked.ForeColor = vbRed
     End If
+    
+    txtGrainSize.value = 200
 End Sub
 
 

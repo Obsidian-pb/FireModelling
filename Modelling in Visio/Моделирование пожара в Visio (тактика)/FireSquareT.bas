@@ -129,7 +129,8 @@ Public Sub RunFire(ByVal timeElapsed As Single, ByVal speed As Single)
         SettingsForm.lblCurrentStatus.Caption = "Шаг: " & i & "(" & fireModeller.CurrentStep & "), " & _
                                                 " пройденный путь: " & Round(realDiffDistance, 2) & "(" & Round(realCurrentDistance, 2) & ")м.," & _
                                                 " время: " & Round(diffTime, 2) & "(" & Round(currentTime, 2) & ")мин " & _
-                                                "Площадь пожара: " & fireModeller.GetFireSquare & "м.кв."
+                                                "Площадь пожара: " & fireModeller.GetFireSquare & "м.кв." ' & _
+                                                "Площадь тушения: " & fireModeller.GetExtSquare & "м.кв."
         On Error GoTo EX
         
         i = i + 1

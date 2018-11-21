@@ -432,6 +432,10 @@ Public Function GetFireSquare() As Single
     GetFireSquare = matrix.fireMaxCells.Count * grain ^ 2 / 1000000
 End Function
 
+Public Function GetExtSquare() As Single
+'Возвращает площадь тушения
+    GetExtSquare = extSquare.GetSquare
+End Function
 
 '----------------------------Расчет площадей тушения--------------------------
 Public Sub FireSquareCalculate(ByRef nozzleCollection As Collection)

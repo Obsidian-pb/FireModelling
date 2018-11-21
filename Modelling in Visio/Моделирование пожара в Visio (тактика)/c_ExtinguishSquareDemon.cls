@@ -305,7 +305,7 @@ End Function
 
 Private Function IsInMatrix(ByRef cell As c_Cell) As Boolean
 'Возвращает Истина, если клетка находится в пределах матрицы
-    If cell.x <= 0 Or cell.y <= 0 Or cell.x > UBound(matrix, 1) Or cell.y > UBound(matrix, 2) Then
+    If cell.x < 0 Or cell.y < 0 Or cell.x > UBound(matrix, 1) Or cell.y > UBound(matrix, 2) Then
         IsInMatrix = False
     Else
         IsInMatrix = True
