@@ -4,6 +4,7 @@ Attribute VB_Name = "ExportVBACode"
 Public Sub SaveVBACode()
 
     ExportVBA Application.ActiveDocument.Path & "\Моделирование пожара в Visio (тактика)\"
+    MsgBox "VBA код экспортирован"
 
 End Sub
 

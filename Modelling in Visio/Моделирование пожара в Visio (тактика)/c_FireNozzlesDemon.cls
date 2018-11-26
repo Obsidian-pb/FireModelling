@@ -55,7 +55,7 @@ Dim nozzle As c_FireNozzleModel
         ReDim calculatedCells(fireMatrixObject.DimensionX, fireMatrixObject.DimensionY)
         
         'Проверяем, находится ли ствол в пределах страницы
-        Debug.Print UBound(calculatedCells, 1) & " " & UBound(calculatedCells, 2)
+'        Debug.Print UBound(calculatedCells, 1) & " " & UBound(calculatedCells, 2)
         If nozzle.position.x < 0 Or nozzle.position.y < 0 Or _
                 nozzle.position.x > UBound(calculatedCells, 1) Or nozzle.position.y > UBound(calculatedCells, 2) Then
         Else
@@ -303,7 +303,11 @@ Private Function IsIntercourseWithFront2(ByRef nozzle As c_FireNozzleModel, ByRe
     If Not IsInMatrix(cell) Then Exit Function
     
     'Проверяем, является ли ячейка открытым пространством
-    If Not fireMatrixObject.GetOpenSpaceLayerValue(cell.x, cell.y) = CellState.csOpenSpace Then Exit Function
+    If Not fireMatrixObject.GetOpenSpaceLayerValue(cell.x, cell.y) = CellState.csOpenSpace Then
+        'Выходим из функции - найдена стена, но фронт не найден, ячейка точки касания фронта не задана
+        IsIntercourseWithFront2 = True
+        Exit Function
+    End If
     
 '    'Если больше предлагаемого пути, то...
 '    If matrix(cell.x, cell.y) = 0 Or matrix(cell.x, cell.y) > wayLen Then
