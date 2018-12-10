@@ -93,6 +93,9 @@ Dim vsO_FireShape As Visio.Shape
     Dim prevTime As Single                  'Время за которое проейден предыдущий этап расчета
     Dim diffTime As Single                  'Время за которое проейден текущий этап расчета
     
+    '---Activate nozzles calculations
+    fireModeller.ActivateNozzles
+    
     'Указываем модельеру значение требуемой интенсивности подачи воды
     fireModeller.intenseNeed = intenseNeed
     

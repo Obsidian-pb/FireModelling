@@ -42,12 +42,15 @@ End Property
 
 
 
+
+
+
 Public Sub RunDemon()
 'Запускаем демона
 Dim nozzle As c_FireNozzleModel
     
-    'Формируем коллекцию расположенных на странице стволов
-    FindNozzles
+'    'Формируем коллекцию расположенных на странице стволов
+'    FindNozzles
     
     'Перебираем все стволы и проверяем, касается ли их зона тушения (5м для ручных и 10 для лафетных) фронта пожара
     For Each nozzle In nozzles
@@ -85,17 +88,20 @@ Dim indexPers As Integer
         If shp.CellExists("User.IndexPers", 0) Then
             indexPers = shp.Cells("User.IndexPers").Result(visNumber)
             If indexPers = 34 Or indexPers = 36 Or indexPers = 39 Then      '34 - ручной водяной ствол, 36 - лафетный водяной, 39 - возимый водяной
-                Set nozzle = New c_FireNozzleModel
-                If indexPers = 34 Then      '34 - ручной водяной ствол, 36 - лафетный водяной, 39 - возимый водяной
-                    nozzle.nozzleType = waterHand
-                ElseIf indexPers = 36 Or indexPers = 39 Then
-                    nozzle.nozzleType = waterLafet
+                'Проверка на маневренность
+                If shp.Cells("Actions.MainManeure.Checked").Result(visNumber) = 0 Then
+                    Set nozzle = New c_FireNozzleModel
+                    If indexPers = 34 Then      '34 - ручной водяной ствол, 36 - лафетный водяной, 39 - возимый водяной
+                        nozzle.nozzleType = waterHand
+                    ElseIf indexPers = 36 Or indexPers = 39 Then
+                        nozzle.nozzleType = waterLafet
+                    End If
+                    Set nozzle.position = GetNozzlePosition(shp.Cells("PinX").Result(visMillimeters), _
+                        shp.Cells("PinY").Result(visMillimeters))
+                    nozzle.waterExpense = shp.Cells("User.PodOut").Result(visNumber)
+                    nozzle.angle = shp.Cells("Angle").Result(visNumber) + halfRadian
+                    nozzles.Add nozzle
                 End If
-                Set nozzle.position = GetNozzlePosition(shp.Cells("PinX").Result(visMillimeters), _
-                    shp.Cells("PinY").Result(visMillimeters))
-                nozzle.waterExpense = shp.Cells("User.PodOut").Result(visNumber)
-                nozzle.angle = shp.Cells("Angle").Result(visNumber) + halfRadian
-                nozzles.Add nozzle
             End If
         End If
     Next shp

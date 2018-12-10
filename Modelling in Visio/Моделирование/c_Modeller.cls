@@ -24,6 +24,9 @@ Public distance As Single           'общая дистанция пройденная при моделирвоани
 Public time As Single               'общее время прошедшее при моделирвоании (условная для идеального случая)
 Public intenseNeed As Single        'Требуемая интенсивность подачи воды л/(с*м.кв.)
 
+Private nozzleDemon As c_FireNozzlesDemon
+    
+
 
 Public Sub setMatrix(ByRef m As c_Matrix)
 'Устанавливаем ссылку на матрицу
@@ -91,14 +94,35 @@ Public Sub SetStartFireCell(ByVal x As Long, ByVal y As Long, Optional value As 
         shp.Cells("FillForegnd").FormulaU = "2"
 End Sub
 
-
+Public Sub ActivateNozzles()
+    Set nozzleDemon = New c_FireNozzlesDemon
+    nozzleDemon.SetGrain = grain
+    Set nozzleDemon.setMatrix = matrix
+    nozzleDemon.FindNozzles
+End Sub
 
 
 
 Public Sub OneRound()
 'один шаг моделирования
 Dim cell As c_Cell
-       
+    
+    'РАЗОБРАТЬСЯ С ЭТИМ - рисование дополнительного шага даже приподанном стволе!!!
+'    'Запускаем анализ наличия пожарнных стволов
+'    Dim nozzleDemon As c_FireNozzlesDemon
+'    Set nozzleDemon = New c_FireNozzlesDemon
+'    nozzleDemon.SetGrain = grain
+'    Set nozzleDemon.setMatrix = matrix
+'    nozzleDemon.RunDemon
+'
+'    'Возможно имеет смысл оставить в качестве опции (или еще как то) безусловный расчет площади тушения, в независимаости от того, поданы стволы или нет - это важно
+'    'Рассчитываем площади тушения для каждого имеющегося на странице ствола, при условии, что для него укзана точка контакта с фронтом пожара
+'    FireSquareCalculate nozzleDemon.nozzles
+    
+    
+    
+    
+    
     'Очищаем коллекцию клеток только начинающих гореть (разгорающихся)
     Set matrix.startedFireCells = New Collection
     
@@ -172,17 +196,16 @@ Dim cell As c_Cell
     Next cell
     
     'Запускаем анализ наличия пожарнных стволов
-'    If time > 10 Then
-        Dim nozzleDemon As c_FireNozzlesDemon
-        Set nozzleDemon = New c_FireNozzlesDemon
-        nozzleDemon.SetGrain = grain
-        Set nozzleDemon.setMatrix = matrix
-        nozzleDemon.RunDemon
-        
-        'Возможно имеет смысл оставить в качестве опции (или еще как то) безусловный расчет площади тушения, в независимаости от того, поданы стволы или нет - это важно
-        'Рассчитываем площади тушения для каждого имеющегося на странице ствола, при условии, что для него укзана точка контакта с фронтом пожара
-        FireSquareCalculate nozzleDemon.nozzles
-'    End If
+'    Dim nozzleDemon As c_FireNozzlesDemon
+'    Set nozzleDemon = New c_FireNozzlesDemon
+'    nozzleDemon.SetGrain = grain
+'    Set nozzleDemon.setMatrix = matrix
+    nozzleDemon.RunDemon
+
+    'Возможно имеет смысл оставить в качестве опции (или еще как то) безусловный расчет площади тушения, в независимаости от того, поданы стволы или нет - это важно
+    'Рассчитываем площади тушения для каждого имеющегося на странице ствола, при условии, что для него укзана точка контакта с фронтом пожара
+    FireSquareCalculate nozzleDemon.nozzles
+
 
 
 

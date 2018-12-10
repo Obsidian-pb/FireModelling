@@ -1,7 +1,7 @@
 VERSION 5.00
 Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} F_InsertFire 
    Caption         =   "Укажите исходные данные"
-   ClientHeight    =   9330
+   ClientHeight    =   7320
    ClientLeft      =   45
    ClientTop       =   435
    ClientWidth     =   8895
@@ -85,6 +85,9 @@ End Sub
 Private Sub btnDeleteMatrix_Click()
     'Удаляем матрицу
     DestroyMatrix
+    
+    'Удаляем фигуры слоя Fire
+    ClearLayer "Fire"
     
     'Указываем, что матрица не запечена
     lblMatrixIsBaked.Caption = "Матрица не запечена."
@@ -338,12 +341,14 @@ Private Sub UserForm_Activate()
     If IsMatrixBacked Then
         lblMatrixIsBaked.Caption = "Матрица запечена. Размер зерна " & grain & "мм."
         lblMatrixIsBaked.ForeColor = vbGreen
+        Me.txtGrainSize = grain
     Else
         lblMatrixIsBaked.Caption = "Матрица не запечена."
         lblMatrixIsBaked.ForeColor = vbRed
+        Me.txtGrainSize.value = 200
     End If
     
-    txtGrainSize.value = 200
+    
 
 End Sub
 
@@ -745,9 +750,9 @@ End Function
 Function GetIntense() As Single
 '---Определяем требуемую интенсивность подачи воды
     If Me.OB_SpeedByObject = True Then
-        GetIntense = CSng(ffSng_PointChange(Me.TB_Intense2))
-    ElseIf Me.OB_SpeedByDirect = True Then
         GetIntense = CSng(ffSng_PointChange(Me.TB_Intense1))
+    ElseIf Me.OB_SpeedByDirect = True Then
+        GetIntense = CSng(ffSng_PointChange(Me.TB_Intense2))
     End If
 End Function
 
