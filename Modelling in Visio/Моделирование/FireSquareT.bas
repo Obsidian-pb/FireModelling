@@ -67,6 +67,9 @@ End Sub
 Public Sub RunFire(ByVal timeElapsed As Single, ByVal speed As Single, ByVal intenseNeed As Single, Optional ByVal path As Single)
 'ћоделируем площадь горени€ до тех пор, пока расчетный путь пройденный огнем не станет больше distance + пройденный ранее (хранитс€ в модельере)
 Dim vsO_FireShape As Visio.Shape
+Dim vsoSelection As Visio.Selection
+Dim newFireShape As Visio.Shape
+Dim modelledFireShape As Visio.Shape
 
     '¬ключаем обработчик ошибок - дл€ предупреждени€ об отсутствии запеченной матрицы
     On Error GoTo EX
@@ -168,10 +171,10 @@ Dim vsO_FireShape As Visio.Shape
 '    fireModeller.time = currentTime
         
     '---ќпредел€ем получившуюс€ фигуру и обращаем ее в фигуру площади горени€
-    Dim vsoSelection As Visio.Selection
+'    Dim vsoSelection As Visio.Selection
     Set vsoSelection = Application.ActiveWindow.Page.CreateSelection(visSelTypeByLayer, visSelModeSkipSuper, "Fire")
-    Dim newFireShape As Visio.Shape
-    Dim modelledFireShape As Visio.Shape
+'    Dim newFireShape As Visio.Shape
+'    Dim modelledFireShape As Visio.Shape
     Set modelledFireShape = vsoSelection(1)
     Set newFireShape = ActivePage.Drop(modelledFireShape, _
                         modelledFireShape.Cells("PinX").Result(visInches), modelledFireShape.Cells("PinY").Result(visInches))
@@ -190,6 +193,23 @@ Dim vsO_FireShape As Visio.Shape
 Exit Sub
 EX:
     MsgBox "ћатрица не запечена!", vbCritical
+    
+    '---ќпредел€ем получившуюс€ фигуру и обращаем ее в фигуру площади горени€
+    Set vsoSelection = Application.ActiveWindow.Page.CreateSelection(visSelTypeByLayer, visSelModeSkipSuper, "Fire")
+    Set modelledFireShape = vsoSelection(1)
+    Set newFireShape = ActivePage.Drop(modelledFireShape, _
+                        modelledFireShape.Cells("PinX").Result(visInches), modelledFireShape.Cells("PinY").Result(visInches))
+    
+    '---—обственно обращение
+    ImportAreaInformation
+    'ѕеремещаем полученные фигуры на задний план
+    newFireShape.SendToBack
+    modelledFireShape.SendToBack
+        
+    Debug.Print "¬сего затрачено " & tmr2.GetElapsedTime & "с."
+    
+    Set tmr = Nothing
+    Set tmr2 = Nothing
 End Sub
 
 ' уничтожение матрицы (очищаем пам€ть)

@@ -75,6 +75,11 @@ Private Sub B_Cancel2_Click()
 End Sub
 
 Private Sub btnBakeMatrix_Click()
+    If IsAcceptableMatrixSize(1200000) = False Then
+        MsgBox "Слишком большой размер результирующей матрицы! Уменьшите размер рабочего листа или зерна матрицы."
+        Exit Sub
+    End If
+
     'Запоминаем значение зерна матрицы
     grain = Me.txtGrainSize
     
@@ -755,6 +760,26 @@ Function GetIntense() As Single
         GetIntense = CSng(ffSng_PointChange(Me.TB_Intense2))
     End If
 End Function
+
+Function IsAcceptableMatrixSize(ByVal maxMatrixSize As Long) As Boolean
+Dim xCount As Long
+Dim yCount As Long
+Dim grain As Integer
+
+    
+    On Error GoTo EX
+    
+    grain = Me.txtGrainSize.value
+
+    xCount = ActivePage.PageSheet.Cells("PageWidth").Result(visMillimeters) / grain
+    yCount = ActivePage.PageSheet.Cells("PageHeight").Result(visMillimeters) / grain
+    
+    IsAcceptableMatrixSize = xCount * yCount < maxMatrixSize
+Exit Function
+EX:
+    IsAcceptableMatrixSize = False
+End Function
+
 
 '--------------------------------Функции проверки корректности введенных данных----------------------------------
 Private Function fC_DataCheck() As Boolean

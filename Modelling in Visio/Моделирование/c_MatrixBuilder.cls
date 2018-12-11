@@ -49,7 +49,8 @@ Dim arr() As Integer
 
     xCount = ActivePage.PageSheet.Cells("PageWidth").Result(visMillimeters) / grain
     yCount = ActivePage.PageSheet.Cells("PageHeight").Result(visMillimeters) / grain
-
+    Debug.Print "Размер матрицы " & xCount * yCount
+    
     ReDim matrix(xCount, yCount)
        
     'Определяем конфигурацию матрицы (стены, зоны горения и т.д.)
