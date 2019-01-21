@@ -119,7 +119,7 @@ Dim pnt As WayPoint
 Dim rounds As Integer
     
     '---Включаем обработчик ошибок
-    On Error GoTo EX
+'    On Error GoTo EX
     
     '---Определяем матрицу расстояний
     ReDim wayMatrix(UBound(matrix, 1), UBound(matrix, 2))
@@ -189,7 +189,8 @@ Dim rounds As Integer
     Dim strColor As String
     strColor = "RGB(" & Int(rnd() * 255) & "," & Int(rnd() * 255) & "," & Int(rnd() * 255) & ")"
     
-    Set wayShp = ActivePage.DrawSpline(wpArray, 0.25, visSplineAbrupt)
+    Set wayShp = ActivePage.DrawSpline(wpArray, 0.25, visSplinePeriodic)         ' visSplineAbrupt) 'КОПАТЬ ЗДЕСЬ
+'    Set wayShp = ActivePage.DrawNURBS(0, 0, wpArray, wpArray)
     wayShp.CellsSRC(visSectionObject, visRowLine, visLineColor).FormulaU = "4"
     wayShp.CellsSRC(visSectionObject, visRowLine, visLineBeginArrow).FormulaU = "13"
     wayShp.CellsSRC(visSectionObject, visRowLine, visLinePattern).FormulaU = "2"

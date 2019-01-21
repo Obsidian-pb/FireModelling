@@ -101,7 +101,7 @@ Dim currentWay As Double
     currentWay = wayLenight + way
 '    Debug.Print currentWay & " --- " & maxWay
 '    If wayMatrix(xPos, yPos) = 0 Or wayMatrix(xPos, yPos) > currentWay Then
-    If wayMatrix(xPos, yPos) = 0 And currentWay <= maxWay * 1.2 Then
+    If wayMatrix(xPos, yPos) = 0 And currentWay <= maxWay * 1 Then
         Dim newWayPoint As WayPoint
         Set newWayPoint = New WayPoint
         newWayPoint.SetPoint xPos, yPos, currentWay, Me, exitPoint
