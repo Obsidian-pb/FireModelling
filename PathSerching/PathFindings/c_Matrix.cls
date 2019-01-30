@@ -169,8 +169,13 @@ Dim rounds As Integer
     '---Объявляем массив для хранения координат точек пути
     Dim j As Integer
     Dim wpArray() As Double
+    '---Объявляем массив для хранения узлов
+    Dim k As Integer
+    Dim wpKnots() As Double
+    
     '---Задаем первую координату массива точек пути
     j = 1
+    k = 1
     ReDim wpArray(j)
     wpArray(0) = curWayPoint.y * step / 25.4
     wpArray(1) = curWayPoint.x * step / 25.4
@@ -178,18 +183,49 @@ Dim rounds As Integer
     Do Until curWayPoint.IsStartPoint
         Set curWayPoint = curWayPoint.previousPoint
         
+        'Массив точек
         j = j + 2
         ReDim Preserve wpArray(j)
         wpArray(j - 1) = curWayPoint.y * step / 25.4
         wpArray(j) = curWayPoint.x * step / 25.4
+        
+        'Массив узлов
+        k = k + 1
+        ReDim Preserve wpKnots(k)
+        wpKnots(k) = k
     Loop
+    
+
+
+    
+'    ReDim wpKnots(k)
+'    wpKnots(0) = 0
+'    wpKnots(1) = 0
+'    wpKnots(2) = 0
+'    wpKnots(3) = 0
+    
+'    Do Until curWayPoint.IsStartPoint
+'        Set curWayPoint = curWayPoint.previousPoint
+'
+'        k = k + 1
+'        ReDim Preserve wpKnots(j)
+'        wpKnots(k) = k
+'    Loop
+    wpKnots(0) = 0
+    wpKnots(1) = 0
+    wpKnots(2) = 0
+    wpKnots(3) = 0
     
     '---Отрисовываем путь
     Dim wayShp As Visio.Shape
     Dim strColor As String
     strColor = "RGB(" & Int(rnd() * 255) & "," & Int(rnd() * 255) & "," & Int(rnd() * 255) & ")"
     
-    Set wayShp = ActivePage.DrawSpline(wpArray, 0.25, visSplinePeriodic)         ' visSplineAbrupt) 'КОПАТЬ ЗДЕСЬ
+    
+'    Set wayShp = ActivePage.DrawSpline(wpArray, 0.25, visSplinePeriodic)    ' visSplinePeriodic)         ' visSplineAbrupt) 'КОПАТЬ ЗДЕСЬ
+    Set wayShp = Application.ActiveWindow.Page.DrawNURBS(3, VisDrawSplineFlags.visSpline1D, wpArray, wpKnots)
+    'wayShp.FitCurve 1, 0
+    
 '    Set wayShp = ActivePage.DrawNURBS(0, 0, wpArray, wpArray)
     wayShp.CellsSRC(visSectionObject, visRowLine, visLineColor).FormulaU = "4"
     wayShp.CellsSRC(visSectionObject, visRowLine, visLineBeginArrow).FormulaU = "13"
