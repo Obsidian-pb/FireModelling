@@ -37,13 +37,7 @@ Dim pnt2 As Point
     '---Запускаем таймер
         Dim timer As c_Timer
         Set timer = New c_Timer
-  
-'---Вбрасываем фигуры
-'    Set matrix = New c_Matrix
-'        matrix.S_CalculateFreeSpace step
-'        matrix.S_CalculateFire step, 20
 
-'        step = GetStepFromShape
 
         '---Находим точку финиша
         Set pnt2 = GetShapeCoord(1)
@@ -64,14 +58,7 @@ Dim pnt2 As Point
             End If
         Next shp
         
-        
-        
-'        Set pnt1 = GetShapeCoord(0, step)
-        
 
-'        matrix.S_CalculateShortPath step, pnt1, pnt2
-    
-'    Set matrix = Nothing
 
     '---Выводим отчет о затраченнмо времени
         timer.PrintElapsedTime

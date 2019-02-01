@@ -170,19 +170,105 @@ Dim rounds As Integer
     Dim j As Integer
     Dim wpArray() As Double
     '---Объявляем массив для хранения узлов
-    Dim k As Integer
+    Dim k As Integer        'для индексов узлов
+    Dim ki As Integer       'для значений узлов
     Dim wpKnots() As Double
     
+    
+'==============Рабочий фрагмент - не удалять пока NURBS не взлетит====================
+'    '---Задаем первую координату массива точек пути
+'    j = 1
+'    k = 1
+'    ReDim wpArray(j)
+'    wpArray(0) = curWayPoint.y * step / 25.4
+'    wpArray(1) = curWayPoint.x * step / 25.4
+'
+'    Do Until curWayPoint.IsStartPoint
+'        Set curWayPoint = curWayPoint.previousPoint
+'
+'        'Массив точек
+'        j = j + 2
+'        ReDim Preserve wpArray(j)
+'        wpArray(j - 1) = curWayPoint.y * step / 25.4
+'        wpArray(j) = curWayPoint.x * step / 25.4
+'
+'        'Массив узлов
+'        k = k + 1
+'        ReDim Preserve wpKnots(k)
+'        wpKnots(k) = k
+'    Loop
+'
+'    '---Указываем 0 для первых 4 узлов
+'    wpKnots(0) = 0
+'    wpKnots(1) = 0
+'    wpKnots(2) = 0
+'    wpKnots(3) = 0
+'
+'    '---Отрисовываем путь
+'    Dim wayShp As Visio.Shape
+'    Dim strColor As String
+'    strColor = "RGB(" & Int(rnd() * 255) & "," & Int(rnd() * 255) & "," & Int(rnd() * 255) & ")"
+'
+'
+''    Set wayShp = ActivePage.DrawSpline(wpArray, 0.25, visSplinePeriodic)    ' visSplinePeriodic)         ' visSplineAbrupt) 'КОПАТЬ ЗДЕСЬ
+'    Set wayShp = Application.ActiveWindow.Page.DrawNURBS(3, VisDrawSplineFlags.visSpline1D, wpArray, wpKnots)
+'==============Рабочий фрагмент - не удалять пока NURBS не взлетит====================
+
+
+
     '---Задаем первую координату массива точек пути
     j = 1
     k = 1
+    ki = 0
     ReDim wpArray(j)
     wpArray(0) = curWayPoint.y * step / 25.4
     wpArray(1) = curWayPoint.x * step / 25.4
     
+    Dim vector1 As String   'Текущий вектор
+    Dim vector2 As String   'Вектор который будем проверять
+    
     Do Until curWayPoint.IsStartPoint
-        Set curWayPoint = curWayPoint.previousPoint
+'        Debug.Print curWayPoint.GetVector(curWayPoint.previousPoint)
+        vector2 = curWayPoint.GetVector(curWayPoint.previousPoint)
         
+        If vector1 = "" Then        'Если вектор 1 не задан, задаем его и идем дальше
+            vector1 = vector2
+        Else                        'Если вектор 1 уже был задан - сравниваем его с текущим вектором,
+            If vector1 = vector2 Then   'и если они равны, выкидываем промежуточную точку
+                ki = ki + 1 'увеличиваем номер узла
+                
+                'Переходим к следующей предыдущей точке
+                Set curWayPoint = curWayPoint.previousPoint
+                
+                
+                
+                
+                
+            Else                        'Если нет, сохраняем промежуточную точку и обновляем вектор 1
+                'Массив точек
+                j = j + 2
+                ReDim Preserve wpArray(j)
+                wpArray(j - 1) = curWayPoint.y * step / 25.4
+                wpArray(j) = curWayPoint.x * step / 25.4
+                
+                'Массив узлов
+                k = k + 1
+                ki = ki + 1 'увеличиваем номер узла
+                ReDim Preserve wpKnots(k)
+                wpKnots(k) = k
+                
+                'Переходим к следующей предыдущей точке
+                Set curWayPoint = curWayPoint.previousPoint
+                
+                'Запоминаем новй текущий вектор
+                vector1 = vector2
+            End If
+        End If
+        
+        
+    Loop
+    
+    '---Указываем последнюю точку
         'Массив точек
         j = j + 2
         ReDim Preserve wpArray(j)
@@ -191,26 +277,13 @@ Dim rounds As Integer
         
         'Массив узлов
         k = k + 1
+        ki = ki + 1 'увеличиваем номер узла
         ReDim Preserve wpKnots(k)
         wpKnots(k) = k
-    Loop
-    
 
-
+                
     
-'    ReDim wpKnots(k)
-'    wpKnots(0) = 0
-'    wpKnots(1) = 0
-'    wpKnots(2) = 0
-'    wpKnots(3) = 0
-    
-'    Do Until curWayPoint.IsStartPoint
-'        Set curWayPoint = curWayPoint.previousPoint
-'
-'        k = k + 1
-'        ReDim Preserve wpKnots(j)
-'        wpKnots(k) = k
-'    Loop
+    '---Указываем 0 для первых 4 узлов
     wpKnots(0) = 0
     wpKnots(1) = 0
     wpKnots(2) = 0
@@ -222,9 +295,22 @@ Dim rounds As Integer
     strColor = "RGB(" & Int(rnd() * 255) & "," & Int(rnd() * 255) & "," & Int(rnd() * 255) & ")"
     
     
-'    Set wayShp = ActivePage.DrawSpline(wpArray, 0.25, visSplinePeriodic)    ' visSplinePeriodic)         ' visSplineAbrupt) 'КОПАТЬ ЗДЕСЬ
-    Set wayShp = Application.ActiveWindow.Page.DrawNURBS(3, VisDrawSplineFlags.visSpline1D, wpArray, wpKnots)
-    'wayShp.FitCurve 1, 0
+'    Set wayShp = ActivePage.DrawSpline(wpArray, 0.25, visSplineAbrupt)       ' visSplinePeriodic)         ' visSplineAbrupt) 'КОПАТЬ ЗДЕСЬ
+    Set wayShp = Application.ActiveWindow.Page.DrawNURBS(3, VisDrawSplineFlags.visPolyline1D, wpArray, wpKnots)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     
 '    Set wayShp = ActivePage.DrawNURBS(0, 0, wpArray, wpArray)
     wayShp.CellsSRC(visSectionObject, visRowLine, visLineColor).FormulaU = "4"
@@ -243,6 +329,7 @@ End Sub
 Private Sub DrawWay(wayPointsArray() As Integer)
 
 End Sub
+
 
 
 

@@ -140,3 +140,8 @@ Public Function IsStartPoint() As Boolean
 'Проверяем, является ли данная точка старотвой, т.е. ее предыдущая точка равна ей самой
     IsStartPoint = (x = previousPoint.x And y = previousPoint.y)
 End Function
+
+Public Function GetVector(ByVal nextWayPoint As WayPoint) As String
+'Функция возвращает текстовый код вектора
+    GetVector = nextWayPoint.x - x & nextWayPoint.y - y
+End Function
