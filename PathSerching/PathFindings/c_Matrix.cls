@@ -30,7 +30,8 @@ Public settingShowFire As Boolean
 Public settingShowPerimeter As Boolean
 
 Public matrix As Variant
-
+Public cellWeights As Variant
+Public currentCellWeights As Variant
 
 '--------------------------Процедуры класса-------------------------------------------------------------------------------------
 Private Sub Class_Initialize()
@@ -137,6 +138,7 @@ Dim rounds As Integer
     i = 0
     
     rounds = 0
+    currentCellWeights = cellWeights
     Do While endFlag = False
         rounds = rounds + 1
         i = 0
@@ -144,7 +146,7 @@ Dim rounds As Integer
         Set newWayPoints = New Collection
         
         For Each pnt In curWayPoints
-            If pnt.Spread(matrix, wayMatrix, newWayPoints, step, rounds) Then
+            If pnt.Spread(matrix, currentCellWeights, wayMatrix, newWayPoints, step, rounds) Then
                 Debug.Print "Путь найден за " & rounds & " шагов " & pnt.x & ":" & pnt.y & ". Длина пути=" & Int(pnt.nextPoint.wayLenight) & "м."
 '                MsgBox "Путь найден за " & rounds & " шагов " & pnt.x & ":" & pnt.y & ". Длина пути=" & Int(pnt.nextPoint.wayLenight) & "м."
                 endFlag = True
@@ -176,16 +178,102 @@ Dim rounds As Integer
     
     
 '==============Рабочий фрагмент - не удалять пока NURBS не взлетит====================
+    '---Задаем первую координату массива точек пути
+    j = 1
+    k = 1
+    ReDim wpArray(j)
+    wpArray(0) = curWayPoint.y * step / 25.4
+    wpArray(1) = curWayPoint.x * step / 25.4
+
+    Do Until curWayPoint.IsStartPoint
+        Set curWayPoint = curWayPoint.previousPoint
+        
+        'Указываем, что в данном месте проходит рукавная линия
+        cellWeights(curWayPoint.x, curWayPoint.y) = cellWeights(curWayPoint.x, curWayPoint.y) + 1
+        
+        'Массив точек
+        j = j + 2
+        ReDim Preserve wpArray(j)
+        wpArray(j - 1) = curWayPoint.y * step / 25.4
+        wpArray(j) = curWayPoint.x * step / 25.4
+
+        'Массив узлов
+        k = k + 1
+        ReDim Preserve wpKnots(k)
+        wpKnots(k) = k
+    Loop
+
+    '---Указываем 0 для первых 4 узлов
+    wpKnots(0) = 0
+    wpKnots(1) = 0
+    wpKnots(2) = 0
+    wpKnots(3) = 0
+
+    '---Отрисовываем путь
+    Dim wayShp As Visio.Shape
+    Dim strColor As String
+    strColor = "RGB(" & Int(rnd() * 255) & "," & Int(rnd() * 255) & "," & Int(rnd() * 255) & ")"
+
+
+'    Set wayShp = ActivePage.DrawSpline(wpArray, 0.25, visSplinePeriodic)    ' visSplinePeriodic)         ' visSplineAbrupt) 'КОПАТЬ ЗДЕСЬ
+    Set wayShp = Application.ActiveWindow.Page.DrawNURBS(3, VisDrawSplineFlags.visSpline1D, wpArray, wpKnots)
+'==============Рабочий фрагмент - не удалять пока NURBS не взлетит====================
+
+
+
 '    '---Задаем первую координату массива точек пути
 '    j = 1
 '    k = 1
+'    ki = 0
 '    ReDim wpArray(j)
 '    wpArray(0) = curWayPoint.y * step / 25.4
 '    wpArray(1) = curWayPoint.x * step / 25.4
 '
-'    Do Until curWayPoint.IsStartPoint
-'        Set curWayPoint = curWayPoint.previousPoint
+'    Dim vector1 As String   'Текущий вектор
+'    Dim vector2 As String   'Вектор который будем проверять
 '
+'    Do Until curWayPoint.IsStartPoint
+''        Debug.Print curWayPoint.GetVector(curWayPoint.previousPoint)
+'        vector2 = curWayPoint.GetVector(curWayPoint.previousPoint)
+'
+'        If vector1 = "" Then        'Если вектор 1 не задан, задаем его и идем дальше
+'            vector1 = vector2
+'        Else                        'Если вектор 1 уже был задан - сравниваем его с текущим вектором,
+'            If vector1 = vector2 Then   'и если они равны, выкидываем промежуточную точку
+'                ki = ki + 1 'увеличиваем номер узла
+'
+'                'Переходим к следующей предыдущей точке
+'                Set curWayPoint = curWayPoint.previousPoint
+'
+'
+'
+'
+'
+'            Else                        'Если нет, сохраняем промежуточную точку и обновляем вектор 1
+'                'Массив точек
+'                j = j + 2
+'                ReDim Preserve wpArray(j)
+'                wpArray(j - 1) = curWayPoint.y * step / 25.4
+'                wpArray(j) = curWayPoint.x * step / 25.4
+'
+'                'Массив узлов
+'                k = k + 1
+'                ki = ki + 1 'увеличиваем номер узла
+'                ReDim Preserve wpKnots(k)
+'                wpKnots(k) = k
+'
+'                'Переходим к следующей предыдущей точке
+'                Set curWayPoint = curWayPoint.previousPoint
+'
+'                'Запоминаем новй текущий вектор
+'                vector1 = vector2
+'            End If
+'        End If
+'
+'
+'    Loop
+'
+'    '---Указываем последнюю точку
 '        'Массив точек
 '        j = j + 2
 '        ReDim Preserve wpArray(j)
@@ -194,9 +282,11 @@ Dim rounds As Integer
 '
 '        'Массив узлов
 '        k = k + 1
+'        ki = ki + 1 'увеличиваем номер узла
 '        ReDim Preserve wpKnots(k)
 '        wpKnots(k) = k
-'    Loop
+'
+'
 '
 '    '---Указываем 0 для первых 4 узлов
 '    wpKnots(0) = 0
@@ -210,93 +300,8 @@ Dim rounds As Integer
 '    strColor = "RGB(" & Int(rnd() * 255) & "," & Int(rnd() * 255) & "," & Int(rnd() * 255) & ")"
 '
 '
-''    Set wayShp = ActivePage.DrawSpline(wpArray, 0.25, visSplinePeriodic)    ' visSplinePeriodic)         ' visSplineAbrupt) 'КОПАТЬ ЗДЕСЬ
-'    Set wayShp = Application.ActiveWindow.Page.DrawNURBS(3, VisDrawSplineFlags.visSpline1D, wpArray, wpKnots)
-'==============Рабочий фрагмент - не удалять пока NURBS не взлетит====================
-
-
-
-    '---Задаем первую координату массива точек пути
-    j = 1
-    k = 1
-    ki = 0
-    ReDim wpArray(j)
-    wpArray(0) = curWayPoint.y * step / 25.4
-    wpArray(1) = curWayPoint.x * step / 25.4
-    
-    Dim vector1 As String   'Текущий вектор
-    Dim vector2 As String   'Вектор который будем проверять
-    
-    Do Until curWayPoint.IsStartPoint
-'        Debug.Print curWayPoint.GetVector(curWayPoint.previousPoint)
-        vector2 = curWayPoint.GetVector(curWayPoint.previousPoint)
-        
-        If vector1 = "" Then        'Если вектор 1 не задан, задаем его и идем дальше
-            vector1 = vector2
-        Else                        'Если вектор 1 уже был задан - сравниваем его с текущим вектором,
-            If vector1 = vector2 Then   'и если они равны, выкидываем промежуточную точку
-                ki = ki + 1 'увеличиваем номер узла
-                
-                'Переходим к следующей предыдущей точке
-                Set curWayPoint = curWayPoint.previousPoint
-                
-                
-                
-                
-                
-            Else                        'Если нет, сохраняем промежуточную точку и обновляем вектор 1
-                'Массив точек
-                j = j + 2
-                ReDim Preserve wpArray(j)
-                wpArray(j - 1) = curWayPoint.y * step / 25.4
-                wpArray(j) = curWayPoint.x * step / 25.4
-                
-                'Массив узлов
-                k = k + 1
-                ki = ki + 1 'увеличиваем номер узла
-                ReDim Preserve wpKnots(k)
-                wpKnots(k) = k
-                
-                'Переходим к следующей предыдущей точке
-                Set curWayPoint = curWayPoint.previousPoint
-                
-                'Запоминаем новй текущий вектор
-                vector1 = vector2
-            End If
-        End If
-        
-        
-    Loop
-    
-    '---Указываем последнюю точку
-        'Массив точек
-        j = j + 2
-        ReDim Preserve wpArray(j)
-        wpArray(j - 1) = curWayPoint.y * step / 25.4
-        wpArray(j) = curWayPoint.x * step / 25.4
-        
-        'Массив узлов
-        k = k + 1
-        ki = ki + 1 'увеличиваем номер узла
-        ReDim Preserve wpKnots(k)
-        wpKnots(k) = k
-
-                
-    
-    '---Указываем 0 для первых 4 узлов
-    wpKnots(0) = 0
-    wpKnots(1) = 0
-    wpKnots(2) = 0
-    wpKnots(3) = 0
-    
-    '---Отрисовываем путь
-    Dim wayShp As Visio.Shape
-    Dim strColor As String
-    strColor = "RGB(" & Int(rnd() * 255) & "," & Int(rnd() * 255) & "," & Int(rnd() * 255) & ")"
-    
-    
-'    Set wayShp = ActivePage.DrawSpline(wpArray, 0.25, visSplineAbrupt)       ' visSplinePeriodic)         ' visSplineAbrupt) 'КОПАТЬ ЗДЕСЬ
-    Set wayShp = Application.ActiveWindow.Page.DrawNURBS(3, VisDrawSplineFlags.visPolyline1D, wpArray, wpKnots)
+''    Set wayShp = ActivePage.DrawSpline(wpArray, 0.25, visSplineAbrupt)       ' visSplinePeriodic)         ' visSplineAbrupt) 'КОПАТЬ ЗДЕСЬ
+'    Set wayShp = Application.ActiveWindow.Page.DrawNURBS(3, VisDrawSplineFlags.visPolyline1D, wpArray, wpKnots)
 
 
 
@@ -315,8 +320,8 @@ Dim rounds As Integer
 '    Set wayShp = ActivePage.DrawNURBS(0, 0, wpArray, wpArray)
     wayShp.CellsSRC(visSectionObject, visRowLine, visLineColor).FormulaU = "4"
     wayShp.CellsSRC(visSectionObject, visRowLine, visLineBeginArrow).FormulaU = "13"
-    wayShp.CellsSRC(visSectionObject, visRowLine, visLinePattern).FormulaU = "2"
-'    wayShp.CellsSRC(visSectionObject, visRowLine, visLineRounding).FormulaU = "2.5m"
+'    wayShp.CellsSRC(visSectionObject, visRowLine, visLinePattern).FormulaU = "2"
+    wayShp.CellsSRC(visSectionObject, visRowLine, visLineRounding).FormulaU = "2.5m"
     wayShp.CellsSRC(visSectionObject, visRowLayerMem, visLayerMember).FormulaU = GetLayerNumber("Path")
 
     
@@ -355,11 +360,15 @@ Dim j As Long
 
     'Определяем по имеющимся размерам массив для матрицы
     ReDim matrix(heightInSteps, widthInSteps)
+    ReDim cellWeights(heightInSteps, widthInSteps)
+    ReDim currentCellWeights(heightInSteps, widthInSteps)
     
     'Наполянем массив данными о наличии стен в узлах сетки
     For i = 0 To heightInSteps
         For j = 0 To widthInSteps
             If Not IsOpenSpace(j * step, i * step, step / 2) Then matrix(i, j) = 1
+            cellWeights(i, j) = 0
+            currentCellWeights(i, j) = 0
         Next j
     Next i
     
@@ -375,6 +384,18 @@ Dim j As Long
 '    Debug.Print DateDiff("s", start, Now())
 End Sub
 
+Public Sub ClearPathMatrixs()
+'Очищаем матрицы учета загруженности рукавными линиями
+Dim i As Long
+Dim j As Long
+    
+    For i = 0 To heightInSteps
+        For j = 0 To widthInSteps
+            cellWeights(i, j) = 0
+            currentCellWeights(i, j) = 0
+        Next j
+    Next i
+End Sub
 
 Private Function IsOpenSpace(x As Long, y As Long, tolerance As Double) As Boolean
 'Функция возвращает Истина, если указанная точка не соприкасается с маской стен, и наоборот, если соприкасается

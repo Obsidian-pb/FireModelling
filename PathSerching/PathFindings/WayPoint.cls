@@ -28,7 +28,7 @@ End Sub
 
 
 
-Public Function Spread(ByRef matrix As Variant, ByRef wayMatrix() As Double, ByRef NewPointsCollection As Collection, _
+Public Function Spread(ByRef matrix As Variant, ByRef currentCellWeights As Variant, ByRef wayMatrix() As Double, ByRef NewPointsCollection As Collection, _
                        ByVal step As Double, ByVal roundNumber As Long) As Boolean
 'Распространяем на ближайшие точки
 Const gipotenuzaMod As Double = 1.4142135623
@@ -38,22 +38,22 @@ Dim maxWay As Double
     
     'Распространяем по вертикали, при условии, что клетка не является стеной (другими словами открыта (0) и при этом путь к ней от данной точки меньше чем имеющийся, но не 0(!))
     '---Вверх
-        If SpreadPoint(matrix, wayMatrix, NewPointsCollection, x, y + 1, step, maxWay) Then
+        If SpreadPoint(matrix, currentCellWeights, wayMatrix, NewPointsCollection, x, y + 1, step, maxWay, 2) Then
             Spread = True
             Exit Function
         End If
     '---Вправо
-        If SpreadPoint(matrix, wayMatrix, NewPointsCollection, x + 1, y, step, maxWay) Then
+        If SpreadPoint(matrix, currentCellWeights, wayMatrix, NewPointsCollection, x + 1, y, step, maxWay, 2) Then
             Spread = True
             Exit Function
         End If
     '---Вниз
-        If SpreadPoint(matrix, wayMatrix, NewPointsCollection, x, y - 1, step, maxWay) Then
+        If SpreadPoint(matrix, currentCellWeights, wayMatrix, NewPointsCollection, x, y - 1, step, maxWay, 2) Then
             Spread = True
             Exit Function
         End If
     '---Влево
-        If SpreadPoint(matrix, wayMatrix, NewPointsCollection, x - 1, y, step, maxWay) Then
+        If SpreadPoint(matrix, currentCellWeights, wayMatrix, NewPointsCollection, x - 1, y, step, maxWay, 2) Then
             Spread = True
             Exit Function
         End If
@@ -61,35 +61,42 @@ Dim maxWay As Double
     'Распространяем по диагонали - сила
     step = step * gipotenuzaMod
     '---ВверхВправо
-        If SpreadPoint(matrix, wayMatrix, NewPointsCollection, x + 1, y + 1, step, maxWay) Then
+        If SpreadPoint(matrix, currentCellWeights, wayMatrix, NewPointsCollection, x + 1, y + 1, step, maxWay, 1) Then
             Spread = True
             Exit Function
         End If
     '---ВправоВниз
-        If SpreadPoint(matrix, wayMatrix, NewPointsCollection, x + 1, y - 1, step, maxWay) Then
+        If SpreadPoint(matrix, currentCellWeights, wayMatrix, NewPointsCollection, x + 1, y - 1, step, maxWay, 1) Then
             Spread = True
             Exit Function
         End If
     '---ВнизВлево
-        If SpreadPoint(matrix, wayMatrix, NewPointsCollection, x - 1, y - 1, step, maxWay) Then
+        If SpreadPoint(matrix, currentCellWeights, wayMatrix, NewPointsCollection, x - 1, y - 1, step, maxWay, 1) Then
             Spread = True
             Exit Function
         End If
     '---ВлевоВверх
-        If SpreadPoint(matrix, wayMatrix, NewPointsCollection, x - 1, y + 1, step, maxWay) Then
+        If SpreadPoint(matrix, currentCellWeights, wayMatrix, NewPointsCollection, x - 1, y + 1, step, maxWay, 1) Then
             Spread = True
             Exit Function
         End If
     
 End Function
 
-Private Function SpreadPoint(ByRef matrix As Variant, ByRef wayMatrix() As Double, ByRef NewPointsCollection As Collection, _
-                                xPos As Integer, yPos As Integer, way As Double, maxWay As Double) As Boolean
+Private Function SpreadPoint(ByRef matrix As Variant, ByRef currentCellWeights As Variant, ByRef wayMatrix() As Double, ByRef NewPointsCollection As Collection, _
+                                xPos As Integer, yPos As Integer, way As Double, maxWay As Double, power As Byte) As Boolean
 'Распространяем волну на указанную точку
 Dim currentWay As Double
 
     '---проверяем не выходит ли координата атакуемой точки за пределы матрицы
     If xPos < 0 Or yPos < 0 Or xPos > UBound(matrix, 1) Or yPos > UBound(matrix, 2) Then
+        SpreadPoint = False
+        Exit Function
+    End If
+    
+    '---Проверяем, степень загруженности данной клетки рукаными линиями
+    If currentCellWeights(xPos, yPos) > 0 Then
+        currentCellWeights(xPos, yPos) = currentCellWeights(xPos, yPos) - power
         SpreadPoint = False
         Exit Function
     End If
@@ -101,7 +108,7 @@ Dim currentWay As Double
     currentWay = wayLenight + way
 '    Debug.Print currentWay & " --- " & maxWay
 '    If wayMatrix(xPos, yPos) = 0 Or wayMatrix(xPos, yPos) > currentWay Then
-    If wayMatrix(xPos, yPos) = 0 And currentWay <= maxWay * 1.5 Then
+    If wayMatrix(xPos, yPos) = 0 Then   'And currentWay <= maxWay * 1.5 Then
         Dim newWayPoint As WayPoint
         Set newWayPoint = New WayPoint
         newWayPoint.SetPoint xPos, yPos, currentWay, Me, exitPoint

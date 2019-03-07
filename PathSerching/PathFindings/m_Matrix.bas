@@ -37,10 +37,12 @@ Dim pnt2 As Point
     '---Запускаем таймер
         Dim timer As c_Timer
         Set timer = New c_Timer
+        
+        '---Очищаем матрицы загруженности рукавами
+        matrix.ClearPathMatrixs
 
-
-        '---Находим точку финиша
-        Set pnt2 = GetShapeCoord(1)
+'        '---Находим точку финиша
+'        Set pnt2 = GetShapeCoord(1)
         
         '---Перебираем все фигуры на листе и если фигура - точка старта, строим от нее маршрут
         For Each shp In Application.ActivePage.Shapes
@@ -50,6 +52,10 @@ Dim pnt2 As Point
                     Set pnt1 = New Point
                     pnt1.x = Int(shp.Cells("PinY").Result(visMillimeters) / stepSize)
                     pnt1.y = Int(shp.Cells("PinX").Result(visMillimeters) / stepSize)
+                    
+                    '---Находим точку финиша
+                    Set pnt2 = GetShapeCoord(shp.Cells("Prop.TargetID").Result(visNumber))
+                    
                     'Прокладываем маршрут
                     matrix.S_CalculateShortPath stepSize, pnt1, pnt2
                     
@@ -68,13 +74,36 @@ End Sub
 
 
 
-Public Function GetShapeCoord(ByVal shapeType As Byte) As Point
+'Public Function GetShapeCoord(ByVal shapeType As Byte) As Point
+''Функция возвращает координаты Фигуры старта поиска пути (0) или финиша (1)
+'Dim shp As Visio.Shape
+'
+'    For Each shp In Application.ActivePage.Shapes
+'        If shp.CellExists("User.EvacObjectType", 0) Then
+'            If shp.Cells("User.EvacObjectType") = shapeType Then
+'                Dim pnt As Point
+'                Set pnt = New Point
+'
+'                pnt.x = Int(shp.Cells("PinY").Result(visMillimeters) / stepSize)
+'                pnt.y = Int(shp.Cells("PinX").Result(visMillimeters) / stepSize)
+'
+'                Set GetShapeCoord = pnt
+'                Exit Function
+'            End If
+'        End If
+'    Next shp
+'
+'End Function
+
+Public Function GetShapeCoord(ByVal shapeID As Long) As Point
 'Функция возвращает координаты Фигуры старта поиска пути (0) или финиша (1)
 Dim shp As Visio.Shape
 
-    For Each shp In Application.ActivePage.Shapes
-        If shp.CellExists("User.EvacObjectType", 0) Then
-            If shp.Cells("User.EvacObjectType") = shapeType Then
+'    For Each shp In Application.ActivePage.Shapes
+'        If shp.CellExists("User.EvacObjectType", 0) Then
+'            If shp.Cells("User.EvacObjectType") = shapeType Then
+                Set shp = Application.ActivePage.Shapes.ItemFromID(shapeID)
+                
                 Dim pnt As Point
                 Set pnt = New Point
                 
@@ -82,12 +111,13 @@ Dim shp As Visio.Shape
                 pnt.y = Int(shp.Cells("PinX").Result(visMillimeters) / stepSize)
                 
                 Set GetShapeCoord = pnt
-                Exit Function
-            End If
-        End If
-    Next shp
+'                Exit Function
+'            End If
+'        End If
+'    Next shp
 
 End Function
+
 
 'Public Function GetStepFromShape() As Double
 ''Получаем шаг расчета от фигуры начала пути
